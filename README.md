@@ -14,9 +14,9 @@ This is still work under progress.
 
 
 
-![alt tag](https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131518.jpg)
-![alt tag](https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131521.jpg)
-![alt tag](https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131507.jpg)
-![alt tag](https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131541.jpg)
+<img src="https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131518.jpg" width="150px" />
+<img src="https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131521.jpg" width="150px" />
+<img src="https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131507.jpg" width="150px" />
+<img src="https://storage.googleapis.com/general_files/telugubeats/screenshots/S51015-131541.jpg" width="150px" />
 
 
