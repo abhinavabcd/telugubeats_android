@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.makeramen.RoundedImageView
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:riv_border_color="#333333"
+        app:riv_mutate_background="true"
+        app:riv_oval="true"
+
+        android:id="@+id/image"
+        android:layout_width="50dp"
+        android:orientation="vertical"
+        android:layout_height="50dp"
+        android:layout_marginLeft="5dp"
+        android:layout_gravity="center_vertical"
+        android:visibility="gone"
+        />
+
+
+    <LinearLayout
+        android:orientation="vertical"
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/user_name"
+            android:layout_width="match_parent"
+            android:textStyle="bold"
+            android:textSize="10sp"
+            android:paddingTop="4dp"
+            android:textColor="@color/less_less_white"
+            android:paddingLeft="5dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/user_message"
+            android:layout_width="match_parent"
+            android:textSize="13sp"
+            android:padding="5dp"
+
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+</LinearLayout>

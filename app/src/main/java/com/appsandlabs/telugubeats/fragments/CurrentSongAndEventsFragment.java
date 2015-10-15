@@ -30,6 +30,7 @@ import android.widget.Toast;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
+import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
@@ -269,8 +270,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
 
 //        final ArrayList<String> eventsAdapter = new ArrayList<String>(TeluguBeatsApp.lastFewEvents);
 //        Collections.reverse(eventsAdapter);
-          uiHandle.scrollingDedications.setAdapter(new ArrayAdapter<String>(TeluguBeatsApp.getContext(),
-                  R.layout.simple_list_item_1, R.id.text_view, TeluguBeatsApp.getLastFewFeedEvents()));
+          uiHandle.scrollingDedications.setAdapter(new FeedViewAdapter(getContext(), 0 , TeluguBeatsApp.getLastFewFeedEvents()));
 
 
 

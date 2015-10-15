@@ -14,7 +14,6 @@ import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
 import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.Poll;
-import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
@@ -63,7 +62,7 @@ public class TeluguBeatsApp extends Application {
     public static Handler onSongPlayPaused = null;
     public static Handler showDeletenotification= null;
     public static Bitmap blurredCurrentSongBg = null;
-    private static List<String> lastFewFeedEvents = new ArrayList<>();
+    private static List<Event> lastFewFeedEvents = new ArrayList<>();
     private static ServerCalls serverCalls;
     public static Bitmap songAlbumArt = null;
 
@@ -85,7 +84,7 @@ public class TeluguBeatsApp extends Application {
         return tracker;
     }
 
-    public static List<String> getLastFewFeedEvents() {
+    public static List<Event> getLastFewFeedEvents() {
         return lastFewFeedEvents;
     }
 
@@ -188,37 +187,23 @@ public class TeluguBeatsApp extends Application {
             if(event==null) return;
             Object payload = null;
             User eventUser = event.fromUser;
-            String feed;
-            switch (event.eventId){
 
+            TeluguBeatsApp.lastFewFeedEvents.add(event);
+            if (doBroadcast) {
+                TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, event);
+            }
+
+            switch (event.eventId){
                 case POLLS_CHANGED:
                     PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
-                    PollItem changedPollItem = Poll.getChangedPoll(pollsChanged);
-                    feed = event.fromUser.name+ " voted up for "+ (changedPollItem!=null ? changedPollItem.song.title: " song ");
-                    TeluguBeatsApp.lastFewFeedEvents.add(feed);
-                    if(doBroadcast) {
-                        TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, feed);
-                    }
-
-
                     if(!TeluguBeatsApp.currentUser.isSame(eventUser) && doBroadcast){
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_CHANGED, pollsChanged);
                     }
                     break;
                 case DEDICATE:
-                    feed = event.fromUser.name + " has dedicated this song to " + event.payload ;
-                    TeluguBeatsApp.lastFewFeedEvents.add(feed);
-                    if(doBroadcast) {
-                        TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, feed);
-                    }
                     break;
 
                 case CHAT_MESSAGE:
-                    feed = event.fromUser.name + ": "+event.payload;
-                    TeluguBeatsApp.lastFewFeedEvents.add(feed);
-                    if(doBroadcast) {
-                        TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, feed);
-                    }
                     break;
                 case SONG_CHANGED:
                     if(doBroadcast) {

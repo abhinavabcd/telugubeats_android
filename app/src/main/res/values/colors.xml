@@ -17,6 +17,7 @@
     <color name="black">#000000</color>
     <color name="less_black">#777777</color>
     <color name="less_white">#EEEEEE</color>
+    <color name="less_less_white">#CCCCCC</color>
 
 
     <color name="malachite">#108070</color>

@@ -181,7 +181,7 @@
                 android:textStyle="bold"
                 android:layout_marginTop="10dp"
                 android:padding="5dp"
-                android:background="@color/translucent_black_dark" />
+                 />
 
             <ListView
                 android:id="@+id/scrolling_dedications"
