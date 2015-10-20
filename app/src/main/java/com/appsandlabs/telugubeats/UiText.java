@@ -37,7 +37,7 @@ public enum UiText {
                 feed = "voted up for " + (changedPollItem != null ? changedPollItem.song.title : " song ");
                 break;
             case DEDICATE:
-                feed =" has dedicated this song to " + event.payload;
+                feed ="dedicated this song to " + event.payload;
                 break;
 
             case CHAT_MESSAGE:

@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class PollItem extends  BaseModel{
     public List<String> userFriends;
+
     @SerializedName("poll_count")
     public int pollCount;
     public Song song;

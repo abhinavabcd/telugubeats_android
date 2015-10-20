@@ -13,6 +13,7 @@ import com.appsandlabs.telugubeats.helpers.ServerCalls;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
 import com.appsandlabs.telugubeats.models.Event;
+import com.appsandlabs.telugubeats.models.InitData;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.User;
@@ -187,10 +188,11 @@ public class TeluguBeatsApp extends Application {
             if(event==null) return;
             Object payload = null;
             User eventUser = event.fromUser;
-
-            TeluguBeatsApp.lastFewFeedEvents.add(event);
-            if (doBroadcast) {
-                TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, event);
+            if(event.eventId!= Event.EventId.RESET_POLLS_AND_SONG) {
+                TeluguBeatsApp.lastFewFeedEvents.add(event);
+                if (doBroadcast) {
+                    TeluguBeatsApp.broadcastEvent(NotifierEvent.GENERIC_FEED, event);
+                }
             }
 
             switch (event.eventId){
@@ -205,12 +207,15 @@ public class TeluguBeatsApp extends Application {
 
                 case CHAT_MESSAGE:
                     break;
-                case SONG_CHANGED:
+                case RESET_POLLS_AND_SONG:
                     if(doBroadcast) {
-                        currentSong = TeluguBeatsApp.gson.fromJson(event.payload, Song.class);
+                        InitData initData = TeluguBeatsApp.gson.fromJson(event.payload, InitData.class);
+                        currentSong = initData.currentSong;
+                        currentPoll = initData.poll;
                         blurredCurrentSongBg = null;
                         songAlbumArt = null;
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.SONG_CHANGED,  null);
+                        TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_RESET,  currentPoll);
                     }
                     break;
             }
@@ -218,7 +223,7 @@ public class TeluguBeatsApp extends Application {
 
 
     public enum NotifierEvent {
-        NONE, POLLS_CHANGED, BLURRED_BG_AVAILABLE, GENERIC_FEED, SONG_CHANGED;
+        NONE, POLLS_CHANGED, BLURRED_BG_AVAILABLE, GENERIC_FEED, SONG_CHANGED, POLLS_RESET;
 
         public Object getValue() {
             return value;
@@ -230,8 +235,8 @@ public class TeluguBeatsApp extends Application {
             this.value = val;
             return this;
         }
-
     }
+
     static HashMap<String, List<AppEventListener>> eventListeners = new HashMap<String, List<AppEventListener>>();
 
     private static synchronized  void addListener(String id , AppEventListener listener){

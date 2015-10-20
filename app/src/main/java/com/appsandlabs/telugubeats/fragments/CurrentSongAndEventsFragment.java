@@ -304,7 +304,15 @@ public class CurrentSongAndEventsFragment extends Fragment {
         Context ctx = TeluguBeatsApp.getCurrentActivity();
 
         uiHandle.songAndTitle.setText(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name);
-        uiHandle.singers.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.singers));
+
+
+        if (TeluguBeatsApp.currentSong.singers!=null && TeluguBeatsApp.currentSong.singers.size()>0) {
+            ((ViewGroup)uiHandle.singers.getParent()).setVisibility(View.VISIBLE);
+            uiHandle.singers.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.singers));
+        }
+        else{
+            ((ViewGroup)uiHandle.singers.getParent()).setVisibility(View.GONE);
+        }
 
 
         if (TeluguBeatsApp.currentSong.album.directors!=null && TeluguBeatsApp.currentSong.album.directors.size()>0) {

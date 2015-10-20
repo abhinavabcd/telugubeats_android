@@ -67,7 +67,8 @@ public class FeedViewAdapter extends ArrayAdapter<Event> {
         }
         uiHandle = (UiHandle) convertView.getTag();
 //        Picasso.with(getContext()).load(uiHandle.image
-        uiHandle.userName.setText(evt.fromUser.name);
+        if(evt.fromUser!=null)
+            uiHandle.userName.setText(evt.fromUser.name);
         uiHandle.userMessage.setText(UiText.getFeedString(evt));
         return convertView;
     }

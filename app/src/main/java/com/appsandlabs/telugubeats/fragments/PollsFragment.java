@@ -14,6 +14,7 @@ import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
+import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
 import com.appsandlabs.telugubeats.widgets.PollsListView;
 
@@ -29,7 +30,15 @@ public class PollsFragment extends Fragment implements AppEventListener {
         switch (type){
             case POLLS_CHANGED:
                 uiHandle.livePollsList.pollsChanged((PollsChanged) data);
+                break;
+            case POLLS_RESET:
+
+                uiHandle.livePollsList.resetPolls((Poll)data);
+                break;
         }
+
+
+
     }
 
     public static class UiHandle{
@@ -79,12 +88,14 @@ public class PollsFragment extends Fragment implements AppEventListener {
     @Override
     public void onResume() {
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
+        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
         super.onResume();
     }
 
     @Override
     public void onPause() {
         TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
+        TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
         super.onPause();
     }
 }

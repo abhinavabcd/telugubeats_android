@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
 public class Event {
 
     public enum EventId{
-        SONG_CHANGED,
+        RESET_POLLS_AND_SONG,
         POLLS_CHANGED,
         CHAT_MESSAGE,
         DEDICATE;
