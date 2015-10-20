@@ -28,6 +28,14 @@ public class Poll extends  BaseModel{
         return null;
     }
 
+    public static String getChangedPollSongTitle(PollsChanged data){
+        for(PollsChanged.PollChange change : data.pollChanges) {
+            if(change.count>0)
+                return change.songTitle;
+        }
+        return "unknown";
+    }
+
     public static boolean isModifiedPoll(PollsChanged data){
         for(PollsChanged.PollChange change : data.pollChanges) {
             for (PollItem pollItem : TeluguBeatsApp.currentPoll.pollItems) {

@@ -2,7 +2,6 @@ package com.appsandlabs.telugubeats;
 
 import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.Poll;
-import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
 
 /**
@@ -33,8 +32,8 @@ public enum UiText {
 
             case POLLS_CHANGED:
                 PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
-                PollItem changedPollItem = Poll.getChangedPoll(pollsChanged);
-                feed = "voted up for " + (changedPollItem != null ? changedPollItem.song.title : " song ");
+                feed = "voted up for " + Poll.getChangedPollSongTitle(pollsChanged);
+                //TODO: indicate modified vote here
                 break;
             case DEDICATE:
                 feed ="dedicated this song to " + event.payload;

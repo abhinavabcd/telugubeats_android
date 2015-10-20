@@ -32,7 +32,6 @@ public class PollsFragment extends Fragment implements AppEventListener {
                 uiHandle.livePollsList.pollsChanged((PollsChanged) data);
                 break;
             case POLLS_RESET:
-
                 uiHandle.livePollsList.resetPolls((Poll)data);
                 break;
         }
@@ -89,6 +88,7 @@ public class PollsFragment extends Fragment implements AppEventListener {
     public void onResume() {
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
+        uiHandle.livePollsList.resetPolls(TeluguBeatsApp.currentPoll);
         super.onResume();
     }
 

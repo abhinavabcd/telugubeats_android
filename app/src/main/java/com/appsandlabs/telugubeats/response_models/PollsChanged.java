@@ -1,6 +1,5 @@
 package com.appsandlabs.telugubeats.response_models;
 
-import com.appsandlabs.telugubeats.models.User;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -16,6 +15,8 @@ public class PollsChanged {
         @SerializedName("poll_id")
         public String pollId;
         public int count; // inc / dec alue
+        @SerializedName("song_title")
+        public String songTitle;
     }
 
     @SerializedName("poll_changes")
