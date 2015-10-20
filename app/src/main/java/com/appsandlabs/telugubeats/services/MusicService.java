@@ -21,6 +21,7 @@ import android.widget.RemoteViews;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.activities.MainActivity;
 import com.appsandlabs.telugubeats.audiotools.FFT;
 import com.appsandlabs.telugubeats.audiotools.TByteArrayOutputStream;
 import com.appsandlabs.telugubeats.config.Config;
@@ -291,14 +292,22 @@ public class MusicService extends Service {
     private void newNotification(boolean showDeleteButton) {
         RemoteViews simpleContentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_notification);
         RemoteViews expandedView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.big_notification);
-
-        final Notification notification = new NotificationCompat.Builder(getApplicationContext())
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(R.drawable.ic_music)
-                .setContentTitle(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name)
-                .build();
+                .setContentTitle(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name);
 
-        setListeners(simpleContentView);
-        setListeners(expandedView);
+
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        notificationBuilder.setContentIntent(contentIntent);
+
+        final Notification notification = notificationBuilder.build();
+
+
+        setNotificationListeners(simpleContentView);
+        setNotificationListeners(expandedView);
 
         notification.contentView = simpleContentView;
         if (currentVersionSupportBigNotification) {
@@ -368,7 +377,7 @@ public class MusicService extends Service {
      *
      * @param view
      */
-    public void setListeners(RemoteViews view) {
+    public void setNotificationListeners(RemoteViews view) {
         Intent delete = new Intent(NOTIFY_DELETE);
         Intent pause = new Intent(NOTIFY_PAUSE);
         Intent play = new Intent(NOTIFY_PLAY);

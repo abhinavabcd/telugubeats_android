@@ -69,6 +69,19 @@ public class MainActivity extends AppBaseFragmentActivity {
         appFragments = new AppFragments(getSupportFragmentManager());
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(appFragments);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+            @Override
+            public void onPageSelected(int position) {
+                if(position==1)//polls fragments
+                    TeluguBeatsApp.broadcastEvent(TeluguBeatsApp.NotifierEvent.POLLS_RESET, TeluguBeatsApp.currentPoll);
+            }
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
         mViewPager.post(new Runnable() {
             @Override
             public void run() {
