@@ -303,7 +303,8 @@ public class CurrentSongAndEventsFragment extends Fragment {
     private void resetCurrentSong() {
         Context ctx = TeluguBeatsApp.getCurrentActivity();
 
-        uiHandle.songAndTitle.setText(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name);
+
+        uiHandle.songAndTitle.setText(UiText.capitalize(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name));
 
 
         if (TeluguBeatsApp.currentSong.singers!=null && TeluguBeatsApp.currentSong.singers.size()>0) {

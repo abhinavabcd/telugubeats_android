@@ -63,7 +63,7 @@ class RandomSelector <T>{
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
-    public static final String SERVER_ADDR = "http://192.168.0.101:8888";
+    public static final String SERVER_ADDR = "http://192.168.0.102:8888";
     public static String streamId = "telugu";
     private final TeluguBeatsApp app;
 

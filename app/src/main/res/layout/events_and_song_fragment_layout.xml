@@ -141,7 +141,8 @@
                     android:id="@+id/live_users"
                     android:layout_width="0dp"
                     android:text="Telugu beats is a live radio. We are coming up with new programs to entertain you too. stay tuned"
-                    android:textSize="12sp"
+                    android:textSize="10sp"
+                    android:textColor="@color/less_less_white"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.5"
                     android:layout_gravity="center_vertical" />
