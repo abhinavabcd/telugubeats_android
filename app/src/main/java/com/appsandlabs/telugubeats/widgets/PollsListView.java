@@ -8,8 +8,6 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -144,8 +142,8 @@ public class PollsListView extends ListView {
                 }
 
                 if (!poll._is_added) {
-                    Animation animation = AnimationUtils.loadAnimation(TeluguBeatsApp.getCurrentActivity(), R.anim.zoom_in);
-                    pollView.startAnimation(animation);
+//                    Animation animation = AnimationUtils.loadAnimation(TeluguBeatsApp.getCurrentActivity(), R.anim.zoom_in);
+//                    pollView.startAnimation(animation);
                     poll._is_added=true;
                 }
                 return pollView;

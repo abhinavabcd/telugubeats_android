@@ -279,8 +279,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    UiUtils.scrollToBottom(uiHandle.scrollingDedications);
-                    UiUtils.scrollToBottom(uiHandle.scrollView);
+//                   showFeedView();
                 }
             }
         });
@@ -292,6 +291,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
                 uiHandle.saySomethingText.setText("");
                 getServerCalls().sendChat(text, new GenericListener<Boolean>());
                 uiHandle.saySomethingText.requestFocus();
+                showFeedView();
             }
         });
 
@@ -300,6 +300,11 @@ public class CurrentSongAndEventsFragment extends Fragment {
         return layout;
     }
 
+
+    public void showFeedView(){
+            UiUtils.scrollToBottom(uiHandle.scrollingDedications);
+            UiUtils.scrollToBottom(uiHandle.scrollView);
+    }
     private void resetCurrentSong() {
         Context ctx = TeluguBeatsApp.getCurrentActivity();
 

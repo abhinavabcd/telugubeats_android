@@ -150,7 +150,32 @@ public class TeluguBeatsApp extends Application {
         eventListeners.clear();
         blurredCurrentSongBg = null;
         serverCalls.closeAll();
+        lastFewFeedEvents.clear();
+
+
+
+
+        tracker = null;
+        pendingNotifications.clear();
+        uiUtils = null;
+        applicationContext = null;
+        currentActivity = null;
+        onFFTData = null;
+        sfd_ser = null;
+        userDeviceManager = null;
+
+
+
+        currentPoll= null;
+        currentSong = null;
+        gson = null;
+        currentUser = null;
+        onSongChanged= null;
+        onSongPlayPaused = null;
+        showDeletenotification= null;
+        blurredCurrentSongBg = null;
         serverCalls = null;
+        songAlbumArt = null;
         TeluguBeatsApp.showDeletenotification = null;
     }
 

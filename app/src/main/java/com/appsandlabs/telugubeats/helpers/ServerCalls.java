@@ -63,12 +63,14 @@ class RandomSelector <T>{
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
-    public static final String SERVER_ADDR = "http://192.168.0.102:8888";
+    public static final String SERVER_ADDR = "http://192.168.0.104:8888";
     public static String streamId = "telugu";
     private final TeluguBeatsApp app;
 
 
     AsyncHttpClient client = new AsyncHttpClient();
+    private AsyncTask<Void, String, Void> eventsListenerTask;
+
     public ServerCalls(TeluguBeatsApp app){
         this.app = app;
         client.setMaxRetriesAndTimeout(1, 5000);
@@ -178,8 +180,9 @@ public class ServerCalls {
     }
     static int count = 10;
     public void readEvents() {
-
-        new AsyncTask<Void , String , Void>(){
+        if(eventsListenerTask!=null)
+            eventsListenerTask.cancel(true);
+        eventsListenerTask = new AsyncTask<Void , String , Void>(){
 
             @Override
             protected Void doInBackground(Void... params) {
@@ -276,6 +279,12 @@ public class ServerCalls {
                 listener.onData(false);
             }
         });
+    }
+
+    public void cancelEvents() {
+        if(eventsListenerTask!=null)
+            eventsListenerTask.cancel(true);
+
     }
 }
 

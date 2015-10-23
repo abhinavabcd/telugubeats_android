@@ -321,15 +321,15 @@ public class MusicService extends Service {
                     notification.bigContentView.setImageViewBitmap(R.id.imageViewAlbumArt, TeluguBeatsApp.songAlbumArt);
                 }
         }
-
-        UiUtils.getBitmapFromURL(TeluguBeatsApp.currentSong.album.imageUrl, new GenericListener<Bitmap>() {
-             @Override
-             public void onData(Bitmap albumArt) {
-                 TeluguBeatsApp.songAlbumArt = albumArt;
-                 newNotification();
-             }
-         });
-
+        else { //reset notification again
+            UiUtils.getBitmapFromURL(TeluguBeatsApp.currentSong.album.imageUrl, new GenericListener<Bitmap>() {
+                @Override
+                public void onData(Bitmap albumArt) {
+                    TeluguBeatsApp.songAlbumArt = albumArt;
+                    newNotification();
+                }
+            });
+        }
 
         if (MusicService.done) {
             notification.contentView.setViewVisibility(R.id.btnPause, View.GONE);

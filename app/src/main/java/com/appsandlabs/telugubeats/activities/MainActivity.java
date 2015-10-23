@@ -97,13 +97,14 @@ public class MainActivity extends AppBaseFragmentActivity {
 //            TeluguBeatsApp.onEvent(eventString);
 //        }
 
-        getServerCalls().readEvents();
+
     }
 
 
     @Override
     protected void onResume() {
         super.onResume();
+        getServerCalls().readEvents();
         if(mBound) return;
         Intent svc=new Intent(this, MusicService.class);
         startService(svc);
@@ -128,6 +129,7 @@ public class MainActivity extends AppBaseFragmentActivity {
 
     @Override
     protected void onPause() {
+        getServerCalls().cancelEvents();
         if(mBound) {
             unbindService(serviceConnection);
             mBound = false;
