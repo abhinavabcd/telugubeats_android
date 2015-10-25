@@ -2,6 +2,7 @@ package com.appsandlabs.telugubeats;
 
 import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.Poll;
+import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
 
 /**
@@ -130,4 +131,13 @@ public enum UiText {
          str = str.toLowerCase();
          return capitalize(str, delimiters);
      }
+
+    public static void songTitleCleanUp(Song currentSong) {
+        if(currentSong.title.toLowerCase().trim().startsWith(currentSong.album.name.toLowerCase().trim())){
+            currentSong.title = currentSong.title.substring(currentSong.album.name.length());
+        }
+        if(currentSong.title.toLowerCase().startsWith("artist")){
+            currentSong.title = currentSong.title.substring("artist".length());
+        }
+    }
 }

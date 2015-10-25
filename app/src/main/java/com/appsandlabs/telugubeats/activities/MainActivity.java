@@ -44,7 +44,7 @@ public class MainActivity extends AppBaseFragmentActivity {
                     @Override
                     public void onData(InitData data) {
                         TeluguBeatsApp.currentPoll = data.poll;
-                        TeluguBeatsApp.currentSong = data.currentSong;
+                        TeluguBeatsApp.setCurrentSong(data.currentSong);
                         TeluguBeatsApp.currentUser = data.user;
                         TeluguBeatsApp.blurredCurrentSongBg = null;
                         if (data.lastFewEvents != null) {

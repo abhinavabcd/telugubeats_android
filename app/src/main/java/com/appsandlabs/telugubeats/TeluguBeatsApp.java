@@ -19,11 +19,13 @@ import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
+import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 import com.google.gson.Gson;
 
+import io.fabric.sdk.android.Fabric;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +59,12 @@ public class TeluguBeatsApp extends Application {
 
 
     public static Poll currentPoll= null;
+
+    public static void setCurrentSong(Song currentSong) {
+        TeluguBeatsApp.currentSong = currentSong;
+        UiText.songTitleCleanUp(currentSong);
+    }
+
     public static Song currentSong;
     public static Gson gson = new Gson();
     public static User currentUser;
@@ -98,6 +106,7 @@ public class TeluguBeatsApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         sfd_ser = getApplicationContext().getResources().openRawResource(R.raw.sfd);
         applicationContext = getApplicationContext();
         uiUtils = new UiUtils(this);
@@ -237,7 +246,7 @@ public class TeluguBeatsApp extends Application {
                     break;
                 case RESET_POLLS_AND_SONG:
                         InitData initData = TeluguBeatsApp.gson.fromJson(event.payload, InitData.class);
-                        currentSong = initData.currentSong;
+                        setCurrentSong(initData.currentSong);
                         currentPoll = initData.poll;
                         blurredCurrentSongBg = null;
                         songAlbumArt = null;

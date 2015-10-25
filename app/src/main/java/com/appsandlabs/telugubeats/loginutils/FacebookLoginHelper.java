@@ -77,7 +77,7 @@ public class FacebookLoginHelper {
 			) {
 		TeluguBeatsApp.getUiUtils().addUiBlock("Fetching Facebook profile");
 		Bundle params = new Bundle();
-        params.putString("fields", "cover,name,first_name,last_name,middle_name,email,address,picture,location,gender,birthday,verified,friends");
+        params.putString("fields", "name,first_name,last_name,middle_name,email,address,picture,location,gender,verified,friends");
 		AccessToken accessToken = AccessToken.getCurrentAccessToken();
 		new GraphRequest(accessToken, "me" , params , HttpMethod.GET, new GraphRequest.Callback() {
 			@Override
