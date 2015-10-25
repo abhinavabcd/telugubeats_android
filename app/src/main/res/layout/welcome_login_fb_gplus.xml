@@ -17,8 +17,20 @@
             android:id="@+id/imageView1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_launcher" />
+            android:src="@drawable/logo"
+            android:layout_gravity="center_horizontal" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            android:capitalize="characters"
+            android:text="Telugu beats is a live radio, where you can talk and entertain people."
+            android:gravity="center"
+            android:textColor="@color/translucent_black"
+            android:padding="4dp"
+            android:lineSpacingExtra="4dp"
+            />
         <TextView
             android:id="@+id/status_msg"
             android:layout_width="wrap_content"
@@ -34,6 +46,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
+            android:textColor="@color/less_black"
             android:paddingBottom="@dimen/normal_padding"
             android:text="Choose your style of login."
             android:textAppearance="?android:attr/textAppearanceMedium"

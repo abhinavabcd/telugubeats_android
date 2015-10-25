@@ -9,6 +9,7 @@ import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.loginutils.FacebookLoginHelper;
 import com.appsandlabs.telugubeats.loginutils.GoogleLoginHelper;
 import com.appsandlabs.telugubeats.models.User;
 
@@ -31,9 +32,29 @@ public class LoginActivity extends AppBaseFragmentActivity {
             return;
         }
 
-
         setContentView(R.layout.welcome_login_fb_gplus);
         facebookButton = findViewById(R.id.facebook_button);
+
+        facebookButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new FacebookLoginHelper().doLogin(new GenericListener<User>(){
+                    @Override
+                    public void onData(User user) {
+                        getServerCalls().registerUser(user, new GenericListener<User>() {
+                            @Override
+                            public void onData(User user) {
+                                TeluguBeatsApp.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
+                                TeluguBeatsApp.currentUser = user;
+                                goToMainActivity();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+
         googlePlusButton = findViewById(R.id.google_plus_button);
         googlePlusButton.setOnClickListener(new View.OnClickListener() {
             @Override
