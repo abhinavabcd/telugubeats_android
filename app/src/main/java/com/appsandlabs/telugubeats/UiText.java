@@ -80,24 +80,29 @@ public enum UiText {
           * @see #capitalizeFully(String)
           * @since 2.1
           */
-                public static String capitalize(final String str, final char... delimiters) {
-                final int delimLen = delimiters == null ? -1 : delimiters.length;
-                if ((str!=null && !str.isEmpty()) || delimLen == 0) {
-                        return str;
-                    }
-                final char[] buffer = str.toCharArray();
-                boolean capitalizeNext = true;
-                for (int i = 0; i < buffer.length; i++) {
-                        final char ch = buffer[i];
-                        if (isDelimiter(ch, delimiters)) {
-                                capitalizeNext = true;
-                            } else if (capitalizeNext) {
-                                buffer[i] = Character.toTitleCase(ch);
-                                capitalizeNext = false;
-                            }
-                    }
-                return new String(buffer);
-            }
+                public static String capitalize(String str, char[] delimiters) {
+                        int delimLen = (delimiters == null ? -1 : delimiters.length);
+                            if (str == null || str.length() == 0 || delimLen == 0) {
+                                   return str;
+                               }
+                           int strLen = str.length();
+                            StringBuffer buffer = new StringBuffer(strLen);
+                        boolean capitalizeNext = true;
+                               for (int i = 0; i < strLen; i++) {
+                                      char ch = str.charAt(i);
+
+                                     if (isDelimiter(ch, delimiters)) {
+                                               buffer.append(ch);
+                                             capitalizeNext = true;
+                                      } else if (capitalizeNext) {
+                                             buffer.append(Character.toTitleCase(ch));
+                                              capitalizeNext = false;
+                                      } else {
+                                             buffer.append(ch);
+                                         }
+                                    }
+                            return buffer.toString();
+                           }
 
         private static boolean isDelimiter(final char ch, final char[] delimiters) {
                 if (delimiters == null) {
@@ -110,4 +115,19 @@ public enum UiText {
                     }
                 return false;
             }
+
+
+    public static String capitalizeFully(String str) {
+                 return capitalizeFully(str, null);
+            }
+
+
+     public static String capitalizeFully(String str, char[] delimiters) {
+         int delimLen = (delimiters == null ? -1 : delimiters.length);
+         if (str == null || str.length() == 0 || delimLen == 0) {
+               return str;
+         }
+         str = str.toLowerCase();
+         return capitalize(str, delimiters);
+     }
 }

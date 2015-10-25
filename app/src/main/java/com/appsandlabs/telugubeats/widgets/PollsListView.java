@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.UiText;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.PollItem;
@@ -98,7 +99,7 @@ public class PollsListView extends ListView {
                 uiHandle = (UiHandle) pollView.getTag();
 
                 Picasso.with(context).load(poll.song.album.imageUrl).into(uiHandle.pollImage);
-                uiHandle.pollTitle.setText(poll.song.title + " - " + poll.song.album.name);
+                uiHandle.pollTitle.setText(UiText.capitalizeFully(poll.song.title + " - " + poll.song.album.name));
                 uiHandle.pollSubtitle.setText(TextUtils.join(", ", poll.song.singers));
                 uiHandle.pollSubtitle2.setText(TextUtils.join(", ", poll.song.album.directors));
                 if (poll.song.album.actors != null && poll.song.album.actors.size() > 0) {
@@ -192,20 +193,20 @@ public class PollsListView extends ListView {
     }
 
     public void pollsChanged(PollsChanged data) {
-        boolean modified = false;
-        PollItem changedPoll = null;
-        for(PollsChanged.PollChange change : data.pollChanges) {
-            for (PollItem poll : polls) {
-                if (change.pollId.equals(poll.id.toString())) {
-                    poll.pollCount += change.count;
-                    changedPoll = poll;
-                    if(change.count<1){
-                        modified = true;
-                    }
-                    poll.pollCount = Math.max(0 , poll.pollCount);
-                }
-            }
-        }
+//        boolean modified = false;
+//        PollItem changedPoll = null;
+//        for(PollsChanged.PollChange change : data.pollChanges) {
+//            for (PollItem poll : polls) {
+//                if (change.pollId.equals(poll.id.toString())) {
+//                    poll.pollCount += change.count;
+//                    changedPoll = poll;
+//                    if(change.count<1){
+//                        modified = true;
+//                    }
+//                    poll.pollCount = Math.max(0 , poll.pollCount);
+//                }
+//            }
+//        }
 
         notifyDataSetChanged();
 

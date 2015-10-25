@@ -75,7 +75,7 @@ public class MainActivity extends AppBaseFragmentActivity {
             }
             @Override
             public void onPageSelected(int position) {
-                if(position==1)//polls fragments
+                if (position == 1)//polls fragments
                     TeluguBeatsApp.broadcastEvent(TeluguBeatsApp.NotifierEvent.POLLS_RESET, TeluguBeatsApp.currentPoll);
             }
             @Override
@@ -89,10 +89,7 @@ public class MainActivity extends AppBaseFragmentActivity {
                 tabLayout.setupWithViewPager(mViewPager);
             }
         });
-        if(TeluguBeatsApp.onSongChanged!=null && TeluguBeatsApp.currentSong!=null){
-            TeluguBeatsApp.onSongChanged.sendMessage(TeluguBeatsApp.onSongChanged.obtainMessage());
-        }
-
+        notifySongChanged();
 //        for(String eventString : data.lastFewEvents){
 //            TeluguBeatsApp.onEvent(eventString);
 //        }
@@ -100,11 +97,18 @@ public class MainActivity extends AppBaseFragmentActivity {
 
     }
 
+    private void notifySongChanged() {
+        if(TeluguBeatsApp.onSongChanged!=null && TeluguBeatsApp.currentSong!=null){
+            TeluguBeatsApp.onSongChanged.sendMessage(TeluguBeatsApp.onSongChanged.obtainMessage());
+        }
+
+    }
+
 
     @Override
     protected void onResume() {
         super.onResume();
-        getServerCalls().readEvents();
+        getServerCalls().readEvents(false);
         if(mBound) return;
         Intent svc=new Intent(this, MusicService.class);
         startService(svc);
@@ -129,7 +133,7 @@ public class MainActivity extends AppBaseFragmentActivity {
 
     @Override
     protected void onPause() {
-        getServerCalls().cancelEvents();
+        //getServerCalls().cancelEvents();
         if(mBound) {
             unbindService(serviceConnection);
             mBound = false;
@@ -142,6 +146,7 @@ public class MainActivity extends AppBaseFragmentActivity {
         // unpause it from notification or something else
 //        musicService.pause = true;
         TeluguBeatsApp.onActivityDestroyed(this);
+        notifySongChanged();
         super.onDestroy();
     }
 

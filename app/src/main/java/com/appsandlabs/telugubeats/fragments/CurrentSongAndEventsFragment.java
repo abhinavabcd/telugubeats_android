@@ -279,7 +279,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-//                   showFeedView();
+                   showFeedView();
                 }
             }
         });
@@ -309,7 +309,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
         Context ctx = TeluguBeatsApp.getCurrentActivity();
 
 
-        uiHandle.songAndTitle.setText(UiText.capitalize(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name));
+        uiHandle.songAndTitle.setText(UiText.capitalizeFully(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name));
 
 
         if (TeluguBeatsApp.currentSong.singers!=null && TeluguBeatsApp.currentSong.singers.size()>0) {

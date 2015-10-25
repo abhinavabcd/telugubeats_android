@@ -15,6 +15,7 @@ import com.appsandlabs.telugubeats.interfaces.AppEventListener;
 import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.InitData;
 import com.appsandlabs.telugubeats.models.Poll;
+import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
@@ -223,7 +224,9 @@ public class TeluguBeatsApp extends Application {
             switch (event.eventId){
                 case POLLS_CHANGED:
                     PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
-                    if(!TeluguBeatsApp.currentUser.isSame(eventUser) && doBroadcast){
+                    if(!TeluguBeatsApp.currentUser.isSame(eventUser))
+                        makeCurrentPollChanges(pollsChanged);
+                    if(doBroadcast){
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_CHANGED, pollsChanged);
                     }
                     break;
@@ -233,17 +236,42 @@ public class TeluguBeatsApp extends Application {
                 case CHAT_MESSAGE:
                     break;
                 case RESET_POLLS_AND_SONG:
-                    if(doBroadcast) {
                         InitData initData = TeluguBeatsApp.gson.fromJson(event.payload, InitData.class);
                         currentSong = initData.currentSong;
                         currentPoll = initData.poll;
                         blurredCurrentSongBg = null;
                         songAlbumArt = null;
+                    if(doBroadcast) {
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.SONG_CHANGED,  null);
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_RESET,  currentPoll);
                     }
                     break;
             }
+    }
+
+    private static void makeCurrentPollChanges(PollsChanged pollsChanged) {
+        for(PollsChanged.PollChange change : pollsChanged.pollChanges) {
+            for (PollItem poll : currentPoll.pollItems) {
+                if (change.pollId.equals(poll.id.toString())) {
+                    poll.pollCount += change.count;
+                    poll.pollCount = Math.max(0 , poll.pollCount);
+                }
+            }
+        }
+    }
+
+    public static String getCurrentPlayingTitle() {
+        if(currentSong!=null)
+            return currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name;
+        return "Telugubeats Live Radio";
+    }
+
+    public static CharSequence getCurrentPlayingSongTitle() {
+        return TeluguBeatsApp.currentSong!=null ? TeluguBeatsApp.currentSong.title : "TeluguBeats";
+    }
+
+    public static CharSequence getCurrentAlbumTitle() {
+        return TeluguBeatsApp.currentSong!=null?TeluguBeatsApp.currentSong.album.name : "Live radio";
     }
 
 

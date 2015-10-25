@@ -63,6 +63,7 @@ class RandomSelector <T>{
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
+//    public static final String SERVER_ADDR = "http://quizapp.appsandlabs.com:8888";
     public static final String SERVER_ADDR = "http://192.168.0.104:8888";
     public static String streamId = "telugu";
     private final TeluguBeatsApp app;
@@ -179,14 +180,23 @@ public class ServerCalls {
         });
     }
     static int count = 10;
-    public void readEvents() {
-        if(eventsListenerTask!=null)
-            eventsListenerTask.cancel(true);
+    String eventsRenewPath = "/events";
+    public void readEvents(final boolean force) {
+        if(force)
+            cancelEvents();
+        else if(eventsListenerTask!=null && eventsListenerTask.getStatus()==AsyncTask.Status.RUNNING) {
+            return;
+        }
         eventsListenerTask = new AsyncTask<Void , String , Void>(){
 
             @Override
             protected Void doInBackground(Void... params) {
-                readEvents();
+                try {
+                    Thread.currentThread().sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                startReadingEvents();
                 return null;
             }
 
@@ -195,15 +205,17 @@ public class ServerCalls {
                 publishProgress(values[0]);
             }
 
-            private void readEvents() {
+            private void startReadingEvents() {
                 URL url = null;
                 try {
-                    url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + "/events");
+                    url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
+                    eventsRenewPath = "/events_renew";
                     HttpURLConnection con = (HttpURLConnection) url.openConnection();
                     Scanner inputStream = new Scanner(new InputStreamReader((con.getInputStream())));
                     inputStream.useDelimiter("\r\n");
                     //noinspection InfiniteLoopStatement
-                    while(true){
+                    boolean keepReading = true;
+                    while(keepReading){
                         StringBuilder str = new StringBuilder();
                         String bytes;
                         while(inputStream.hasNext()){
@@ -215,11 +227,16 @@ public class ServerCalls {
                             str.append(bytes);
                             str.append("\n");
                         }
-                        publishProgress(str.toString());
+                        if(str.length()>0)
+                            publishProgress(str.toString());
+                        else{
+                            keepReading = false;
+                            readEvents(true);
+                        }
                     }
                 } catch (IOException e) {
                     if(count-- > 0)
-                        readEvents();
+                        readEvents(true);
                 }
                 return;
             }
@@ -256,6 +273,7 @@ public class ServerCalls {
 
 
     public void closeAll() {
+        cancelEvents();
         client.cancelAllRequests(true);
     }
 

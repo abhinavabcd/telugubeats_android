@@ -294,7 +294,7 @@ public class MusicService extends Service {
         RemoteViews expandedView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.big_notification);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(R.drawable.ic_music)
-                .setContentTitle(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name);
+                .setContentTitle(TeluguBeatsApp.getCurrentPlayingTitle());
 
 
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
@@ -321,7 +321,7 @@ public class MusicService extends Service {
                     notification.bigContentView.setImageViewBitmap(R.id.imageViewAlbumArt, TeluguBeatsApp.songAlbumArt);
                 }
         }
-        else { //reset notification again
+        else if(TeluguBeatsApp.currentSong!=null && TeluguBeatsApp.currentSong.album.imageUrl!=null) { //reset notification again
             UiUtils.getBitmapFromURL(TeluguBeatsApp.currentSong.album.imageUrl, new GenericListener<Bitmap>() {
                 @Override
                 public void onData(Bitmap albumArt) {
@@ -356,11 +356,11 @@ public class MusicService extends Service {
             }
         }
 
-        notification.contentView.setTextViewText(R.id.textSongName, TeluguBeatsApp.currentSong.title);
-        notification.contentView.setTextViewText(R.id.textAlbumName, TeluguBeatsApp.currentSong.album.name);
+        notification.contentView.setTextViewText(R.id.textSongName, TeluguBeatsApp.getCurrentPlayingSongTitle());
+        notification.contentView.setTextViewText(R.id.textAlbumName, TeluguBeatsApp.getCurrentAlbumTitle());
         if (currentVersionSupportBigNotification) {
-            notification.bigContentView.setTextViewText(R.id.textSongName, TeluguBeatsApp.currentSong.title);
-            notification.bigContentView.setTextViewText(R.id.textAlbumName, TeluguBeatsApp.currentSong.album.name);
+            notification.bigContentView.setTextViewText(R.id.textSongName, TeluguBeatsApp.getCurrentPlayingSongTitle());
+            notification.bigContentView.setTextViewText(R.id.textAlbumName, TeluguBeatsApp.getCurrentAlbumTitle());
         }
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
