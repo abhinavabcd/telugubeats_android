@@ -20,7 +20,7 @@ public class LiveTalkFragment extends Fragment {
         view.findViewById(R.id.live_talk_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getActivity(), "feature not yet soon , you may have to wait a little , kindly email." , Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), "feature not yet available , you may have to wait a little , kindly email." , Toast.LENGTH_LONG).show();
             }
         });
         return view;
