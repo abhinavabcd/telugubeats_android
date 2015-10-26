@@ -1,6 +1,7 @@
 package com.appsandlabs.telugubeats.activities;
 
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,7 +20,10 @@ import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.fragments.CurrentSongAndEventsFragment;
 import com.appsandlabs.telugubeats.fragments.LiveTalkFragment;
 import com.appsandlabs.telugubeats.fragments.PollsFragment;
+import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.InitData;
+import com.appsandlabs.telugubeats.recievers.EventDataReceiver;
+import com.appsandlabs.telugubeats.services.EventsListenerService;
 import com.appsandlabs.telugubeats.services.MusicService;
 
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
@@ -31,9 +35,11 @@ public class MainActivity extends AppBaseFragmentActivity {
     public ServiceConnection serviceConnection;
     private AppFragments appFragments;
     private ViewPager mViewPager;
+    private Intent eventReaderService;
+    private EventDataReceiver eventsBroadcastReceiver;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(TeluguBeatsApp.getUserDeviceManager().getLoadingView(this));
@@ -101,14 +107,46 @@ public class MainActivity extends AppBaseFragmentActivity {
         if(TeluguBeatsApp.onSongChanged!=null && TeluguBeatsApp.currentSong!=null){
             TeluguBeatsApp.onSongChanged.sendMessage(TeluguBeatsApp.onSongChanged.obtainMessage());
         }
+    }
 
+
+    @Override
+    protected void registerRecievers(){
+        IntentFilter filter = new IntentFilter(EventsListenerService.EVENT_INTENT_ACTION);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        eventsBroadcastReceiver = new EventDataReceiver(new GenericListener<Event>(){
+            @Override
+            public void onData(Event s) {
+                if(s==null){
+                    stopIntentServices();
+                    startIntentServices();
+                }
+            }
+        });
+        registerReceiver(eventsBroadcastReceiver, filter);
+
+    }
+
+    @Override
+    protected void unregisterRecievers(){
+        unregisterReceiver(eventsBroadcastReceiver);
+    }
+
+    @Override
+    protected void startIntentServices(){
+        eventReaderService =  new Intent(this, EventsListenerService.class);
+        startService(eventReaderService);
+    }
+
+    @Override
+    protected void stopIntentServices(){
+        stopService(eventReaderService);
     }
 
 
     @Override
     protected void onResume() {
         super.onResume();
-        getServerCalls().readEvents(false);
         if(mBound) return;
         Intent svc=new Intent(this, MusicService.class);
         startService(svc);

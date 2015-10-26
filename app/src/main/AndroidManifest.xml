@@ -23,6 +23,12 @@
         <service android:name="com.appsandlabs.telugubeats.services.MusicService"
             android:exported="true"
             android:enabled="true"/>
+
+        <service
+            android:name="com.appsandlabs.telugubeats.services.EventsListenerService"
+            android:exported="false"/>
+
+
         <receiver android:name="com.appsandlabs.telugubeats.recievers.NotificationBroadcast" >
             <intent-filter>
                 <action android:name="com.appsandlabs.telugubeats.delete" />

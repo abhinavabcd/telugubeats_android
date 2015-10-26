@@ -25,12 +25,14 @@ import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 import com.google.gson.Gson;
 
-import io.fabric.sdk.android.Fabric;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.fabric.sdk.android.Fabric;
 
 /**
  * Created by abhinav on 7/13/15.
@@ -75,7 +77,7 @@ public class TeluguBeatsApp extends Application {
     private static List<Event> lastFewFeedEvents = new ArrayList<>();
     private static ServerCalls serverCalls;
     public static Bitmap songAlbumArt = null;
-
+    public static long lastSongRestTime;
     /**
      * Access to the global Analytics singleton. If this method returns null you forgot to either
      * set android:name="&lt;this.class.name&gt;" attribute on your application element in
@@ -211,16 +213,16 @@ public class TeluguBeatsApp extends Application {
     }
 
 
-    public static void onEvent(String eventString){
+    public static Event onEvent(String eventString){
         Event event = TeluguBeatsApp.gson.fromJson(eventString , Event.class);
-        onEvent(event, true);
+        return onEvent(event, true);
     }
-    public static void onEvent(String eventString, boolean doBroadcast){
+    public static Event onEvent(String eventString, boolean doBroadcast){
         Event event = TeluguBeatsApp.gson.fromJson(eventString , Event.class);
-        onEvent(event, doBroadcast);
+        return onEvent(event, doBroadcast);
     }
-    public static void onEvent(Event event, boolean doBroadcast) {
-            if(event==null) return;
+    public static Event onEvent(Event event, boolean doBroadcast) {
+            if(event==null) return event;
             Object payload = null;
             User eventUser = event.fromUser;
             if(event.eventId!= Event.EventId.RESET_POLLS_AND_SONG) {
@@ -250,12 +252,14 @@ public class TeluguBeatsApp extends Application {
                         currentPoll = initData.poll;
                         blurredCurrentSongBg = null;
                         songAlbumArt = null;
+                        lastSongRestTime = new Date().getTime();
                     if(doBroadcast) {
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.SONG_CHANGED,  null);
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_RESET,  currentPoll);
                     }
                     break;
             }
+        return event;
     }
 
     private static void makeCurrentPollChanges(PollsChanged pollsChanged) {

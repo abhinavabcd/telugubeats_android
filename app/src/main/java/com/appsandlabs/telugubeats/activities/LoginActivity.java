@@ -24,7 +24,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
     private View googlePlusButton;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         if(TeluguBeatsApp.getUserDeviceManager().isLoggedInUser()){

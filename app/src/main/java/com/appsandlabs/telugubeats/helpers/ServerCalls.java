@@ -18,14 +18,9 @@ import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
 
 
 class Item<T> {
@@ -178,73 +173,6 @@ public class ServerCalls {
 
             }
         });
-    }
-    static int count = 10;
-    String eventsRenewPath = "/events";
-    public void readEvents(final boolean force) {
-        if(force)
-            cancelEvents();
-        else if(eventsListenerTask!=null && eventsListenerTask.getStatus()==AsyncTask.Status.RUNNING) {
-            return;
-        }
-        eventsListenerTask = new AsyncTask<Void , String , Void>(){
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    Thread.currentThread().sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                startReadingEvents();
-                return null;
-            }
-
-            @Override
-            protected void onProgressUpdate(String... values) {
-                publishProgress(values[0]);
-            }
-
-            private void startReadingEvents() {
-                URL url = null;
-                try {
-                    url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
-                    eventsRenewPath = "/events_renew";
-                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                    Scanner inputStream = new Scanner(new InputStreamReader((con.getInputStream())));
-                    inputStream.useDelimiter("\r\n");
-                    //noinspection InfiniteLoopStatement
-                    boolean keepReading = true;
-                    while(keepReading){
-                        StringBuilder str = new StringBuilder();
-                        String bytes;
-                        while(inputStream.hasNext()){
-                            bytes = inputStream.next();
-                            if(bytes==null) return; //reinitialize
-                            if(bytes.equalsIgnoreCase("")){
-                                break; // stop word reached
-                            }
-                            str.append(bytes);
-                            str.append("\n");
-                        }
-                        if(str.length()>0)
-                            publishProgress(str.toString());
-                        else{
-                            keepReading = false;
-                            readEvents(true);
-                        }
-                    }
-                } catch (IOException e) {
-                    if(count-- > 0)
-                        readEvents(true);
-                }
-                return;
-            }
-
-            private void publishProgress(String s) {
-                TeluguBeatsApp.onEvent(s);
-            }
-        }.execute();
     }
 
     public void sendDedicateEvent(String userName, final GenericListener<Boolean> listener) {
