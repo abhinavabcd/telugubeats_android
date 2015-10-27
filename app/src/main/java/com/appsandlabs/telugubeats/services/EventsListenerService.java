@@ -2,7 +2,10 @@ package com.appsandlabs.telugubeats.services;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
 
+import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
 
 import java.io.IOException;
@@ -17,7 +20,7 @@ import java.util.Scanner;
  */
 public class EventsListenerService extends IntentService {
     public static final String EVENT_INTENT_ACTION = "an_event_from_telugubeats";
-    private static boolean isDestroyed = true;
+    public static boolean isDestroyed = false;
     private HttpURLConnection con;
     private InputStream inpStream;
 
@@ -33,6 +36,11 @@ public class EventsListenerService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        isDestroyed = false;
+        Log.e(Config.ERR_LOG_TAG, "Events listener intent started ");
+        if(intent.getExtras()!=null && intent.getExtras().getBoolean("restart")){
+            eventsRenewPath = "/events_renew";
+        };
         try {
             Thread.currentThread().sleep(1000);
         } catch (InterruptedException e) {
@@ -47,6 +55,7 @@ public class EventsListenerService extends IntentService {
     String eventsRenewPath = "/events";
     private void startReadingEvents() {
         URL url = null;
+        Log.e(Config.ERR_LOG_TAG, "Events listener has started ");
         try {
             url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
             eventsRenewPath = "/events_renew";
@@ -54,7 +63,6 @@ public class EventsListenerService extends IntentService {
             inpStream = con.getInputStream();
             Scanner inputStream = new Scanner(new InputStreamReader((inpStream)));
             inputStream.useDelimiter("\r\n");
-            //noinspection InfiniteLoopStatement
             boolean keepReading = true;
             while(keepReading){
                 StringBuilder str = new StringBuilder();
@@ -72,14 +80,22 @@ public class EventsListenerService extends IntentService {
                     publishEvent(str.toString());
                 else{
                     keepReading = false;
+                    Log.e(Config.ERR_LOG_TAG, "Empty event found ");
+
                     publishEvent(null);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
+            Log.e(Config.ERR_LOG_TAG, "Scanner is closed , restarting : "+(3-count));
             if(count-->0){
                 startReadingEvents();
+                return;
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "Check your internet connection" , Toast.LENGTH_LONG).show();
             }
         }
+        Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
         return;
     }
 
@@ -93,6 +109,7 @@ public class EventsListenerService extends IntentService {
 
     @Override
     public void onDestroy() {
+        Log.e(Config.ERR_LOG_TAG, "Events listener is destroyed ");
         EventsListenerService.isDestroyed = true;
         if(inpStream!=null) {
             try {

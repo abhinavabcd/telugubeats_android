@@ -1,5 +1,6 @@
 package com.appsandlabs.telugubeats.activities;
 
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -42,6 +43,7 @@ public class MainActivity extends AppBaseFragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        EventsListenerService.isDestroyed = false;
         setContentView(TeluguBeatsApp.getUserDeviceManager().getLoadingView(this));
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -132,10 +134,17 @@ public class MainActivity extends AppBaseFragmentActivity {
         unregisterReceiver(eventsBroadcastReceiver);
     }
 
+    boolean isFirstTimeFlag = true;
+
     @Override
-    protected void startIntentServices(){
+    public void startIntentServices(){
+        if(isEventsServiceRunning()) return;
         eventReaderService =  new Intent(this, EventsListenerService.class);
+        if(!isFirstTimeFlag){
+            eventReaderService.putExtra("restart", true);
+        }
         startService(eventReaderService);
+        isFirstTimeFlag = false;
     }
 
     @Override
@@ -144,9 +153,23 @@ public class MainActivity extends AppBaseFragmentActivity {
     }
 
 
+    private boolean isEventsServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.appsandlabs.telugubeats.services.EventsListenerService".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        if(!isEventsServiceRunning()){
+            startIntentServices();//events listener service
+        }
+
         if(mBound) return;
         Intent svc=new Intent(this, MusicService.class);
         startService(svc);

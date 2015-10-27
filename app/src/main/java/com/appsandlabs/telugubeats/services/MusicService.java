@@ -5,7 +5,10 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -47,7 +50,7 @@ import javazoom.jl.decoder.SampleBuffer;
 /**
  * Created by abhinav on 9/21/15.
  */
-public class MusicService extends Service {
+public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener {
 
 
     private MusicServiceBinder serviceBinder;
@@ -61,6 +64,10 @@ public class MusicService extends Service {
     public static final String NOTIFY_DELETE = "com.appsandlabs.telugubeats.delete";
     public static final String NOTIFY_PAUSE = "com.appsandlabs.telugubeats.pause";
     public static final String NOTIFY_PLAY = "com.appsandlabs.telugubeats.play";
+    private AudioManager mAM;
+    private BroadcastReceiver musicCommandReceiver;
+    private boolean mReceiverRegistered = false;
+
 
     //this is a dummy binder , will just use methods from the original service class only
     public static class MusicServiceBinder extends Binder {
@@ -79,7 +86,7 @@ public class MusicService extends Service {
 
 
     public IBinder onBind(Intent arg0) {
-        Log.d("telugubeats_log", "bind");
+        Log.e(Config.ERR_LOG_TAG, "bind");
         return serviceBinder == null ? (serviceBinder = new MusicServiceBinder(this)) : serviceBinder;
     }
 
@@ -87,20 +94,95 @@ public class MusicService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("telugubeats_log", "create");
+        Log.e(Config.ERR_LOG_TAG, "create");
         done = false;
         playStream();
     }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Log.d("telugubeats_log", "onstartCommad");
+        Log.e(Config.ERR_LOG_TAG, "onstartCommad");
+
 
         addMessageHandlers();
-
+        addAudioFocusStateListener();
 
         return START_STICKY;
     }
+
+    private void addAudioFocusStateListener() {
+        mAM = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+
+    }
+    private boolean mAudioFocusGranted = false;
+    private boolean requestAudioFocus() {
+        if (!mAudioFocusGranted) {
+            AudioManager am = (AudioManager) getApplicationContext()
+                    .getSystemService(Context.AUDIO_SERVICE);
+            // Request audio focus for play back
+            int result = am.requestAudioFocus(this,
+                    // Use the music stream.
+                    AudioManager.STREAM_MUSIC,
+                    // Request permanent focus.
+                    AudioManager.AUDIOFOCUS_GAIN);
+
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                mAudioFocusGranted = true;
+            } else {
+                // FAILED
+                Log.e(Config.ERR_LOG_TAG,
+                        ">>>>>>>>>>>>> FAILED TO GET AUDIO FOCUS <<<<<<<<<<<<<<<<<<<<<<<<");
+            }
+        }
+        return mAudioFocusGranted;
+    }
+
+    private void abandonAudioFocus() {
+        AudioManager am = (AudioManager) getApplicationContext()
+                .getSystemService(Context.AUDIO_SERVICE);
+        int result = am.abandonAudioFocus(this);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            mAudioFocusGranted = false;
+        } else {
+            // FAILED
+            Log.e(Config.ERR_LOG_TAG,
+                    ">>>>>>>>>>>>> FAILED TO ABANDON AUDIO FOCUS <<<<<<<<<<<<<<<<<<<<<<<<");
+        }
+    }
+
+
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN");
+                playStream();
+                break;
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT");
+                break;
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK");
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS");
+                MusicService.done = true;
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+                MusicService.done = true;
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                break;
+            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_REQUEST_FAILED");
+                break;
+            default:
+                //
+        }
+    }
+
 
     private void addMessageHandlers() {
         TeluguBeatsApp.onSongChanged = new Handler(new Handler.Callback() {
@@ -145,7 +227,7 @@ public class MusicService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d("telugubeats_log", "destroy");
+        Log.e(Config.ERR_LOG_TAG, "destroy");
         done = true;
         TeluguBeatsApp.sfd_ser = null;
         super.onDestroy();
@@ -179,7 +261,7 @@ public class MusicService extends Service {
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 musicService.decode(con.getInputStream());
             } catch (IOException | DecoderException e) {
-                Log.d("telugubeats_log", "some error in thread");
+                Log.e(Config.ERR_LOG_TAG, "some error in thread");
                 e.printStackTrace();
                 //loop again from beginning getting headers and stuff
             }
@@ -394,13 +476,81 @@ public class MusicService extends Service {
 
     }
 
+
+    private static final String CMD_NAME = "command";
+    private static final String CMD_PAUSE = "pause";
+    private static final String CMD_STOP = "pause";
+    private static final String CMD_PLAY = "play";
+
+    // Jellybean
+    private static String SERVICE_CMD = "com.sec.android.app.music.musicservicecommand";
+    private static String PAUSE_SERVICE_CMD = "com.sec.android.app.music.musicservicecommand.pause";
+    private static String PLAY_SERVICE_CMD = "com.sec.android.app.music.musicservicecommand.play";
+
+    // Honeycomb
+    {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+            SERVICE_CMD = "com.android.music.musicservicecommand";
+            PAUSE_SERVICE_CMD = "com.android.music.musicservicecommand.pause";
+            PLAY_SERVICE_CMD = "com.android.music.musicservicecommand.play";
+        }
+    };
+
+    private void setupBroadcastReceiver() {
+        musicCommandReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                String cmd = intent.getStringExtra(CMD_NAME);
+                Log.i(Config.ERR_LOG_TAG, "mIntentReceiver.onReceive " + action + " / " + cmd);
+
+                if (PAUSE_SERVICE_CMD.equals(action)
+                        || (SERVICE_CMD.equals(action) && CMD_PAUSE.equals(cmd))) {
+                    playStream();
+                }
+
+                if (PLAY_SERVICE_CMD.equals(action)
+                        || (SERVICE_CMD.equals(action) && CMD_PLAY.equals(cmd))) {
+                    stopStream();
+                }
+            }
+        };
+
+        // Do the right thing when something else tries to play
+        if (!mReceiverRegistered) {
+            IntentFilter commandFilter = new IntentFilter();
+            commandFilter.addAction(SERVICE_CMD);
+            commandFilter.addAction(PAUSE_SERVICE_CMD);
+            commandFilter.addAction(PLAY_SERVICE_CMD);
+            getApplicationContext().registerReceiver(musicCommandReceiver, commandFilter);
+            mReceiverRegistered = true;
+        }
+    }
+    private void forceMusicStop() {
+        AudioManager am = (AudioManager) getApplicationContext()
+                .getSystemService(Context.AUDIO_SERVICE);
+        if (am.isMusicActive()) {
+            Intent intentToStop = new Intent(SERVICE_CMD);
+            intentToStop.putExtra(CMD_NAME, CMD_STOP);
+            getApplicationContext().sendBroadcast(intentToStop);
+        }
+    }
+
     final Object sync = new Object();
-    private void playStream() {
+    private boolean playStream() {
         synchronized (sync) {
             done = false;
+            // 1. Acquire audio focus
+            if (!mAudioFocusGranted && requestAudioFocus()) {
+                // 2. Kill off any other play back sources
+                forceMusicStop();
+                // 3. Register broadcast receiver for player intents
+                setupBroadcastReceiver();
+            }
             playingThread = new MusicPlayThread(this);
             //downloads stream and starts playing mp3 music and keep updating polls
             playingThread.start();
+            return true;
         }
     }
 
@@ -408,7 +558,9 @@ public class MusicService extends Service {
         synchronized (sync) {
             done = true;
             try {
-                playingThread.join();
+                if(playingThread!=null)
+                    playingThread.join();
+                abandonAudioFocus();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

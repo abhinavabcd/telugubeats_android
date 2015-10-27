@@ -30,11 +30,13 @@ import android.widget.Toast;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
+import com.appsandlabs.telugubeats.activities.MainActivity;
 import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
+import com.appsandlabs.telugubeats.services.MusicService;
 
 import java.util.concurrent.Callable;
 
@@ -80,7 +82,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
         EditText saySomethingText;
         Button sayButton;
         ScrollView scrollView;
-
+        Button playPauseButton;
     }
 
     UiHandle uiHandle = new UiHandle();
@@ -99,6 +101,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
         uiHandle.saySomethingText = (EditText)layout.findViewById(R.id.say_something_text);
         uiHandle.sayButton  = (Button)layout.findViewById(R.id.say_button);
         uiHandle.scrollView = (ScrollView)layout.findViewById(R.id.scrolling_view);
+        uiHandle.playPauseButton = (Button)layout.findViewById(R.id.play_pause_button);
         return uiHandle;
     }
 
@@ -259,7 +262,7 @@ public class CurrentSongAndEventsFragment extends Fragment {
 
                                 if(sharingIntent.resolveActivity(getActivity().getPackageManager()) != null)
                                     startActivityForResult(sharingIntent, 0);
-                                Toast.makeText(getContext() , UiText.UNABLE_TO_OPEN_INTENT.getValue() ,  Toast.LENGTH_SHORT );
+                                Toast.makeText(getContext() , UiText.UNABLE_TO_OPEN_INTENT.getValue() ,  Toast.LENGTH_SHORT ).show();
                             }
                         });
                     }
@@ -397,6 +400,30 @@ public class CurrentSongAndEventsFragment extends Fragment {
         };
 
         resetCurrentSong();
+        if(MusicService.done){
+            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+        }
+        else{
+            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+        }
+        uiHandle.playPauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(TeluguBeatsApp.onSongPlayPaused!=null){
+                    if(MusicService.done) {//already paused => play now{
+                        TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 0));
+                        UiUtils.setBg(uiHandle.playPauseButton , getResources().getDrawable(R.drawable.ic_action_pause));
+                        restartEventListenerService();
+                    }
+                    else{
+                        TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 1));
+                        UiUtils.setBg(uiHandle.playPauseButton , getResources().getDrawable(R.drawable.ic_action_play));
+
+                    }
+
+                }
+            }
+        });
 
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.GENERIC_FEED, feedChangeListener = new AppEventListener() {
             @Override
@@ -418,6 +445,10 @@ public class CurrentSongAndEventsFragment extends Fragment {
         });
         //add current song change listener
         super.onResume();
+    }
+
+    private void restartEventListenerService() {
+        ((MainActivity)getActivity()).startIntentServices();
     }
 
     @Override
