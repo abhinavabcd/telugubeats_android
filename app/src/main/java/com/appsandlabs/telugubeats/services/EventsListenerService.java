@@ -76,13 +76,14 @@ public class EventsListenerService extends IntentService {
             url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
             eventsRenewPath = "/events_renew";
             con = (HttpURLConnection) url.openConnection();
+            con.setRequestProperty("Connection","keep-alive");
             inpStream = con.getInputStream();
             StringBuilder s = new StringBuilder(1024);
             byte[] byteBuffer = new byte[1024];
             int bytesRead = -1;
             char[] delimiter = new char[4];
 
-            while((bytesRead = inpStream.read(byteBuffer))>0) { //read forever until the socket is closed or eof reached
+            while((bytesRead = inpStream.read(byteBuffer))>0){ //read forever until the socket is closed or eof reached
                 for (int i = 0; i < bytesRead; i++) {
                     s.append((char) byteBuffer[i]);
                     int l = s.length();
@@ -94,11 +95,11 @@ public class EventsListenerService extends IntentService {
                     }
                 }
             }
-            if(bytesRead==0){
-                logd("crazy zero bytes read");
+            if(bytesRead<=0){
+                logd("server closed connection lets restart");
+                startReadingEvents();
+                return;
             }
-
-
 //            Scanner inputStream = new Scanner(new InputStreamReader((inpStream)));
 //            inputStream.useDelimiter("\r\n");
 //            boolean keepReading = true;

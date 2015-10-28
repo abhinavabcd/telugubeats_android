@@ -238,7 +238,7 @@ public class TeluguBeatsApp extends Application {
             switch (event.eventId){
                 case POLLS_CHANGED:
                     PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
-                    if(!TeluguBeatsApp.currentUser.isSame(eventUser))
+                    if(!TeluguBeatsApp.isSameUser(eventUser))
                         makeCurrentPollChanges(pollsChanged);
                     if(doBroadcast){
                         TeluguBeatsApp.broadcastEvent(NotifierEvent.POLLS_CHANGED, pollsChanged);
@@ -263,6 +263,10 @@ public class TeluguBeatsApp extends Application {
                     break;
             }
         return event;
+    }
+
+    private static boolean isSameUser(User eventUser) {
+        return currentUser!=null && currentUser.isSame(eventUser);
     }
 
     private static void makeCurrentPollChanges(PollsChanged pollsChanged) {

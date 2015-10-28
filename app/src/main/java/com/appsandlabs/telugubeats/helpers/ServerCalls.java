@@ -73,7 +73,7 @@ public class ServerCalls {
         client.setTimeout(4000);
         client.setMaxConnections(100);
         if(UserDeviceManager.getAuthKey()!=null)
-            client.addHeader("auth_key", UserDeviceManager.getAuthKey());
+            client.addHeader("auth-key", UserDeviceManager.getAuthKey());
     }
     static Gson gson = new Gson();
 
@@ -164,7 +164,7 @@ public class ServerCalls {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 User user = gson.fromJson(new String(responseBody), User.class);
-                client.addHeader("auth_key", user.auth_key);
+                client.addHeader("auth-key", user.auth_key);
                 listener.onData(user);
             }
 
