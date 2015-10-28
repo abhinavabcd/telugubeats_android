@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PersistableBundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -21,13 +22,15 @@ import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.fragments.CurrentSongAndEventsFragment;
 import com.appsandlabs.telugubeats.fragments.LiveTalkFragment;
 import com.appsandlabs.telugubeats.fragments.PollsFragment;
-import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.InitData;
 import com.appsandlabs.telugubeats.recievers.EventDataReceiver;
 import com.appsandlabs.telugubeats.services.EventsListenerService;
 import com.appsandlabs.telugubeats.services.MusicService;
 
+import java.util.Date;
+
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
+import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
 
 public class MainActivity extends AppBaseFragmentActivity {
 
@@ -38,11 +41,22 @@ public class MainActivity extends AppBaseFragmentActivity {
     private ViewPager mViewPager;
     private Intent eventReaderService;
     private EventDataReceiver eventsBroadcastReceiver;
+    private long lastEventsServiceStartTimeStamp = 0;
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState, PersistableBundle persistentState) {
+        super.onCreate(savedInstanceState, persistentState);
+        isFirstTimeFlag = true;
+        logd("created , saved instance");
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        isFirstTimeFlag  = true;
+        logd("main activity created");
         EventsListenerService.isDestroyed = false;
         setContentView(TeluguBeatsApp.getUserDeviceManager().getLoadingView(this));
         new Handler().postDelayed(new Runnable() {
@@ -116,15 +130,7 @@ public class MainActivity extends AppBaseFragmentActivity {
     protected void registerRecievers(){
         IntentFilter filter = new IntentFilter(EventsListenerService.EVENT_INTENT_ACTION);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
-        eventsBroadcastReceiver = new EventDataReceiver(new GenericListener<Event>(){
-            @Override
-            public void onData(Event s) {
-                if(s==null){
-                    stopIntentServices();
-                    startIntentServices();
-                }
-            }
-        });
+        eventsBroadcastReceiver = new EventDataReceiver();
         registerReceiver(eventsBroadcastReceiver, filter);
 
     }
@@ -138,13 +144,13 @@ public class MainActivity extends AppBaseFragmentActivity {
 
     @Override
     public void startIntentServices(){
-        if(isEventsServiceRunning()) return;
-        eventReaderService =  new Intent(this, EventsListenerService.class);
-        if(!isFirstTimeFlag){
+        eventReaderService = new Intent(this, EventsListenerService.class);
+        if (!isFirstTimeFlag) {
             eventReaderService.putExtra("restart", true);
         }
         startService(eventReaderService);
         isFirstTimeFlag = false;
+        lastEventsServiceStartTimeStamp = new Date().getTime();
     }
 
     @Override
@@ -166,8 +172,10 @@ public class MainActivity extends AppBaseFragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(!isEventsServiceRunning()){
-            startIntentServices();//events listener service
+        logd("main activity resumed");
+        long timeElapsed = new Date().getTime()- lastEventsServiceStartTimeStamp;
+        if ( timeElapsed > 10 * 60 * 1000){//10 minutes
+            startIntentServices();//events listener service //restart
         }
 
         if(mBound) return;
@@ -195,10 +203,10 @@ public class MainActivity extends AppBaseFragmentActivity {
     @Override
     protected void onPause() {
         //getServerCalls().cancelEvents();
-        if(mBound) {
-            unbindService(serviceConnection);
-            mBound = false;
-        }
+//        if(mBound) {
+//            unbindService(serviceConnection);
+//            mBound = false;
+//        }
         super.onPause();
     }
 

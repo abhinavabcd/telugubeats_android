@@ -23,7 +23,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="10sp"
                 android:capitalize="characters"
-                android:text="Telugu beats is a live radio, where you can talk and entertain people. People talk is coming soon."
+                android:text="Telugu beats is a live radio, where you can talk and entertain people. People talk is coming soon. We are currently on 128kbps stream and we suggest you enjoy the music on a stable connection like a wifi. We'll notify you when 64kbps is up."
                 android:gravity="center"
                 android:padding="4dp"
                 android:lineSpacingExtra="4dp"

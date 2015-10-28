@@ -5,8 +5,10 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 
 import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
+import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.enums.NotifificationProcessingState;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
@@ -222,6 +224,7 @@ public class TeluguBeatsApp extends Application {
         return onEvent(event, doBroadcast);
     }
     public static Event onEvent(Event event, boolean doBroadcast) {
+            logd("recieved event "+event.eventId.toString());
             if(event==null) return event;
             Object payload = null;
             User eventUser = event.fromUser;
@@ -378,6 +381,10 @@ public class TeluguBeatsApp extends Application {
         for(AppEventListener listener : eventListeners.get(id)){
             sendBroadcast(listener , type, data);
         }
+    }
+
+    public static void logd(String str){
+        Log.d(Config.DEBUG_LOG_TAG, str);
     }
 
 

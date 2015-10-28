@@ -27,7 +27,8 @@
 
         <service
             android:name="com.appsandlabs.telugubeats.services.EventsListenerService"
-            android:exported="false"/>
+            android:exported="false"
+            android:enabled="true"/>
 
 
         <receiver android:name="com.appsandlabs.telugubeats.recievers.NotificationBroadcast" >

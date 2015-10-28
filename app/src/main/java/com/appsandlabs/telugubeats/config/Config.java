@@ -7,6 +7,7 @@ public class Config {
     public static final boolean IS_TEST_BUILD = false;
     public static final String GCM_SAVED = "gcm_saved";
     public static final String ERR_LOG_TAG = "telugubeats_error_log";
+    public static final String DEBUG_LOG_TAG = "telugubeats_error_log";
     public static  String APP_LOADING_VIEW_IMAGE = null;
     public static final String REGISTRATION_COMPLETE = "registration_complete";
     public static final String PREF_ENCODED_KEY = "user_auth_key";

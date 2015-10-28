@@ -95,7 +95,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public void onCreate() {
         super.onCreate();
         Log.e(Config.ERR_LOG_TAG, "create");
-        done = false;
+        done = true;
         playStream();
     }
 
@@ -539,6 +539,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     final Object sync = new Object();
     private boolean playStream() {
         synchronized (sync) {
+            if(!done && playingThread!=null && playingThread.isAlive()) return false;
             done = false;
             // 1. Acquire audio focus
             if (!mAudioFocusGranted && requestAudioFocus()) {
