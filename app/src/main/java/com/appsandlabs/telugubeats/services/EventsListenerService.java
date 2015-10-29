@@ -49,7 +49,6 @@ public class EventsListenerService extends IntentService {
         // check if old inpstream is fine , else stop that intentservice and star new for yourself
         if(intent.getExtras()!=null && intent.getExtras().getBoolean("restart")){
             eventsRenewPath = "/events_renew";
-            gracefullyCloseInpStream(); // fuck you ,  release the stream atleast :'( : P
         };
         try {
             Thread.currentThread().sleep(1000);
@@ -76,7 +75,8 @@ public class EventsListenerService extends IntentService {
             url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
             eventsRenewPath = "/events_renew";
             con = (HttpURLConnection) url.openConnection();
-            con.setRequestProperty("Connection","keep-alive");
+            con.setRequestProperty("Connection", "keep-alive");
+            gracefullyCloseInpStream(); // fuck you ,  release the stream atleast :'( : P
             inpStream = con.getInputStream();
             StringBuilder s = new StringBuilder(1024);
             byte[] byteBuffer = new byte[1024];
@@ -133,7 +133,7 @@ public class EventsListenerService extends IntentService {
                 return;
             }
             else{
-                Toast.makeText(getApplicationContext(), "Check your internet connection" , Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_LONG).show();
             }
         }
         Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
@@ -152,7 +152,6 @@ public class EventsListenerService extends IntentService {
     public void onDestroy() {
         Log.e(Config.ERR_LOG_TAG, "Events listener is destroyed ");
         EventsListenerService.isDestroyed = true;
-        gracefullyCloseInpStream();
         super.onDestroy();
     }
 
