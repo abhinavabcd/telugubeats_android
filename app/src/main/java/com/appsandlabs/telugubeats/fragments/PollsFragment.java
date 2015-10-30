@@ -3,8 +3,8 @@ package com.appsandlabs.telugubeats.fragments;
 import android.content.Context;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -18,10 +18,13 @@ import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
 import com.appsandlabs.telugubeats.widgets.PollsListView;
 
+import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
+import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
+
 /**
  * Created by abhinav on 10/2/15.
  */
-public class PollsFragment extends Fragment implements AppEventListener {
+public class PollsFragment extends BaseViewPagerFragment implements AppEventListener {
     private AppEventListener blurredBgListener;
     private LinearLayout layout;
 
@@ -39,6 +42,11 @@ public class PollsFragment extends Fragment implements AppEventListener {
 
 
     }
+    private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
+    @Override public boolean isViewBeingDragged(MotionEvent event) {
+        return mAbsListViewDelegate.isViewBeingDragged(event, uiHandle.livePollsList);
+    }
+
 
     public static class UiHandle{
 

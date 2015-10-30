@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 
 import com.appsandlabs.telugubeats.config.Config;
+import com.appsandlabs.telugubeats.helpers.UiUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -116,17 +117,17 @@ public class UserDeviceManager {
 		preferences.edit().clear().commit();
 	}
 
-	public View getLoadingView(Context context) {
+	public static View getLoadingView(Context context) {
 		LinearLayout mainLayout = new LinearLayout(context);
 		mainLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		mainLayout.setGravity(Gravity.CENTER);
 		ImageView headerImageView = new ImageView(context);
 		if(Config.APP_LOADING_VIEW_IMAGE==null || Config.APP_LOADING_VIEW_IMAGE.trim().isEmpty()){
 
-			app.getUiUtils().setBg(headerImageView , context.getResources().getDrawable(R.drawable.logo));
+			UiUtils.setBg(headerImageView, context.getResources().getDrawable(R.drawable.logo));
 		}
 		else{
-			app.getUiUtils().loadImageIntoView(context, headerImageView, Config.APP_LOADING_VIEW_IMAGE, true);
+			UiUtils.loadImageIntoView(context, headerImageView, Config.APP_LOADING_VIEW_IMAGE, true);
 		}
 		LayoutParams temp3 = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		temp3.gravity= Gravity.CENTER;

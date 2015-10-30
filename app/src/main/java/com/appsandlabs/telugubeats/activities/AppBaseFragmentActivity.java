@@ -66,7 +66,7 @@ public class AppBaseFragmentActivity extends FragmentActivity {
     protected void unregisterRecievers(){
     }
 
-    protected void startIntentServices(){
+    public void startIntentServices(){
     }
 
     protected void stopIntentServices(){

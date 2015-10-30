@@ -515,12 +515,12 @@ public class UiUtils {
 		return true;
 	}
 
-	public Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
+	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, null);
 	}
 
 
-	public Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
+	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, -1, -1, t);
 	}
 

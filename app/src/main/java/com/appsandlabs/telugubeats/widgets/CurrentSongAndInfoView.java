@@ -1,8 +1,7 @@
-package com.appsandlabs.telugubeats.fragments;
+package com.appsandlabs.telugubeats.widgets;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,26 +11,18 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.Bundle;
-import android.os.Handler;
-import android.support.v4.app.Fragment;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
+import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
-import com.appsandlabs.telugubeats.activities.MainActivity;
-import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
@@ -42,15 +33,16 @@ import java.util.concurrent.Callable;
 
 import bolts.Continuation;
 import bolts.Task;
+import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
 
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.getContext;
+import static com.appsandlabs.telugubeats.TeluguBeatsApp.getCurrentActivity;
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
 import static com.appsandlabs.telugubeats.helpers.UiUtils.getColorFromResource;
 
 /**
- * Created by abhinav on 10/2/15.
+ * Created by abhinav on 10/30/15.
  */
-public class CurrentSongAndEventsFragment extends Fragment {
+public class CurrentSongAndInfoView extends LinearLayout {
 
     private Paint hLinesPaint;
     private Paint barPaint;
@@ -61,17 +53,16 @@ public class CurrentSongAndEventsFragment extends Fragment {
     private float[] barHeightsLeft = new float[VisualizerConfig.nBars];
     private float[] barHeightsRight = new float[VisualizerConfig.nBars];
     private View visualizerView;
-    public ServiceConnection serviceConnection;
     private Bitmap mBitmap;
     private ViewGroup layout;
     private AppEventListener blurredBgListener;
-    private AppEventListener feedChangeListener;
     private AppEventListener songChangeListener;
+    private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
+
 
     public static class UiHandle{
 
         TextView songAndTitle;
-        ListView scrollingDedications;
         TextView musicDirectors;
         TextView actors;
         TextView directors;
@@ -79,18 +70,16 @@ public class CurrentSongAndEventsFragment extends Fragment {
         TextView liveUsers;
         LinearLayout whatsAppDedicate;
         LinearLayout visualizer;
-        EditText saySomethingText;
-        Button sayButton;
-        ScrollView scrollView;
         Button playPauseButton;
     }
+
+
 
     UiHandle uiHandle = new UiHandle();
 
     public UiHandle initUiHandle(ViewGroup layout){
 
         uiHandle.songAndTitle = (TextView)layout.findViewById(R.id.song_and_title);
-        uiHandle.scrollingDedications = (ListView)layout.findViewById(R.id.scrolling_dedications);
         uiHandle.musicDirectors = (TextView)layout.findViewById(R.id.music_directors);
         uiHandle.actors = (TextView)layout.findViewById(R.id.actors);
         uiHandle.directors = (TextView)layout.findViewById(R.id.directors);
@@ -98,18 +87,22 @@ public class CurrentSongAndEventsFragment extends Fragment {
         uiHandle.liveUsers = (TextView)layout.findViewById(R.id.live_users);
         uiHandle.whatsAppDedicate = (LinearLayout)layout.findViewById(R.id.whats_app_dedicate);
         uiHandle.visualizer = (LinearLayout)layout.findViewById(R.id.visualizer);
-        uiHandle.saySomethingText = (EditText)layout.findViewById(R.id.say_something_text);
-        uiHandle.sayButton  = (Button)layout.findViewById(R.id.say_button);
-        uiHandle.scrollView = (ScrollView)layout.findViewById(R.id.scrolling_view);
         uiHandle.playPauseButton = (Button)layout.findViewById(R.id.play_pause_button);
         return uiHandle;
     }
 
 
-    Bitmap visualizerBitmap = null;
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
-        Context ctx = getActivity();
+
+    public CurrentSongAndInfoView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        layout = (ViewGroup) View.inflate(getContext(), R.layout.current_song_header, null);
+        addView(layout);
+        initializeView(layout);
+    }
+
+
+
+    private void initializeView(ViewGroup layout) {
         hLinesPaint = new Paint();
         hLinesPaint.setColor(getResources().getColor(android.R.color.transparent));
         hLinesPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
@@ -119,13 +112,15 @@ public class CurrentSongAndEventsFragment extends Fragment {
         barPaint.setStrokeWidth(1);
         barPaint.setShader(new LinearGradient(0, 0, 0, VisualizerConfig.barHeight, getColorFromResource(R.color.malachite), Color.argb(255, 200, 200, 200), Shader.TileMode.MIRROR));
         barPaint.setStyle(Paint.Style.FILL);
-        layout = (ViewGroup) inflater.inflate(R.layout.events_and_song_fragment_layout, null);
+
+
+
 
         uiHandle = initUiHandle(layout);
 
 
 
-        uiHandle.visualizer.addView(visualizerView = new View(ctx) {
+        uiHandle.visualizer.addView(visualizerView = new View(getContext()) {
 
 
             public Canvas canvas;
@@ -260,54 +255,24 @@ public class CurrentSongAndEventsFragment extends Fragment {
                                 sharingIntent.putExtra(Intent.EXTRA_TEXT, link);
                                 sharingIntent.setPackage("com.whatsapp");
 
-                                if(sharingIntent.resolveActivity(getActivity().getPackageManager()) != null)
-                                    startActivityForResult(sharingIntent, 0);
-                                Toast.makeText(getContext() , UiText.UNABLE_TO_OPEN_INTENT.getValue() ,  Toast.LENGTH_SHORT ).show();
+                                if(sharingIntent.resolveActivity(getContext().getPackageManager()) != null)
+                                    getCurrentActivity().startActivityForResult(sharingIntent, 0);
+                                Toast.makeText(getContext(), UiText.UNABLE_TO_OPEN_INTENT.getValue(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
                 });
             }
         });
-
-
-//        final ArrayList<String> eventsAdapter = new ArrayList<String>(TeluguBeatsApp.lastFewEvents);
-//        Collections.reverse(eventsAdapter);
-          uiHandle.scrollingDedications.setAdapter(new FeedViewAdapter(getContext(), 0 , TeluguBeatsApp.getLastFewFeedEvents()));
-
-
-
-        uiHandle.saySomethingText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                   showFeedView();
-                }
-            }
-        });
-
-        uiHandle.sayButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String text = uiHandle.saySomethingText.getText().toString();
-                uiHandle.saySomethingText.setText("");
-                getServerCalls().sendChat(text, new GenericListener<Boolean>());
-                uiHandle.saySomethingText.requestFocus();
-                showFeedView();
-            }
-        });
-
-
-        UiUtils.scrollToBottom(uiHandle.scrollingDedications);
-        return layout;
+        onResume();
     }
 
 
-    public void showFeedView(){
-            UiUtils.scrollToBottom(uiHandle.scrollingDedications);
-            UiUtils.scrollToBottom(uiHandle.scrollView);
-    }
+
+
+
+    Bitmap visualizerBitmap = null;
+
     private void resetCurrentSong() {
         Context ctx = TeluguBeatsApp.getCurrentActivity();
 
@@ -383,7 +348,6 @@ public class CurrentSongAndEventsFragment extends Fragment {
     }
 
 
-    @Override
     public void onResume() {
         TeluguBeatsApp.onFFTData = new GenericListener<float[]>(){
             @Override
@@ -409,15 +373,13 @@ public class CurrentSongAndEventsFragment extends Fragment {
         uiHandle.playPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(TeluguBeatsApp.onSongPlayPaused!=null){
-                    if(MusicService.done) {//already paused => play now{
+                if (TeluguBeatsApp.onSongPlayPaused != null) {
+                    if (MusicService.done) {//already paused => play now{
                         TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 0));
-                        UiUtils.setBg(uiHandle.playPauseButton , getResources().getDrawable(R.drawable.ic_action_pause));
-                        restartEventListenerService();
-                    }
-                    else{
+                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+                    } else {
                         TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 1));
-                        UiUtils.setBg(uiHandle.playPauseButton , getResources().getDrawable(R.drawable.ic_action_play));
+                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
 
                     }
 
@@ -425,40 +387,18 @@ public class CurrentSongAndEventsFragment extends Fragment {
             }
         });
 
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.GENERIC_FEED, feedChangeListener = new AppEventListener() {
-            @Override
-            public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        showFeedView();
-                    }
-                });
-            }
-        });
-
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener= new AppEventListener() {
+        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener = new AppEventListener() {
             @Override
             public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
                 resetCurrentSong();
             }
         });
-        //add current song change listener
-        super.onResume();
     }
 
-    private void restartEventListenerService() {
-        ((MainActivity)getActivity()).startIntentServices();
-    }
 
-    @Override
     public void onPause() {
         TeluguBeatsApp.onFFTData = new GenericListener<>();
         TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
-        TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.GENERIC_FEED, feedChangeListener);
         TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener);
-        //TODO : remove event listener
-
-        super.onPause();
     }
 }

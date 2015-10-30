@@ -8,4 +8,9 @@
 
     <dimen name="one_dp">1dp</dimen>
     <dimen name="one_sp">1sp</dimen>
+
+
+    <dimen name="tabs_height">48dp</dimen>
+    <dimen name="viewpager_header_height">144dp</dimen>
+
 </resources>

@@ -6,50 +6,44 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PersistableBundle;
-import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.UserDeviceManager;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
-import com.appsandlabs.telugubeats.fragments.CurrentSongAndEventsFragment;
+import com.appsandlabs.telugubeats.fragments.ChatAndEventsFragment;
 import com.appsandlabs.telugubeats.fragments.LiveTalkFragment;
 import com.appsandlabs.telugubeats.fragments.PollsFragment;
 import com.appsandlabs.telugubeats.models.InitData;
 import com.appsandlabs.telugubeats.recievers.EventDataReceiver;
 import com.appsandlabs.telugubeats.services.EventsListenerService;
 import com.appsandlabs.telugubeats.services.MusicService;
+import com.appsandlabs.telugubeats.widgets.CurrentSongAndInfoView;
 
 import java.util.Date;
+
+import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
+import me.relex.seamlessviewpagerheader.widget.SlidingTabLayout;
 
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
 
-public class MainActivity extends AppBaseFragmentActivity {
+public class MainActivity extends me.relex.seamlessviewpagerheader.activity.MainActivity {
 
     MusicService musicService;
-    private boolean mBound;
     public ServiceConnection serviceConnection;
     private AppFragments appFragments;
-    private ViewPager mViewPager;
     private Intent eventReaderService;
     private EventDataReceiver eventsBroadcastReceiver;
     private long lastEventsServiceStartTimeStamp = 0;
 
-
-    @Override
-    public void onCreate(Bundle savedInstanceState, PersistableBundle persistentState) {
-        super.onCreate(savedInstanceState, persistentState);
-        isFirstTimeFlag = true;
-        logd("created , saved instance");
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,7 +52,7 @@ public class MainActivity extends AppBaseFragmentActivity {
         isFirstTimeFlag  = true;
         logd("main activity created");
         EventsListenerService.isDestroyed = false;
-        setContentView(TeluguBeatsApp.getUserDeviceManager().getLoadingView(this));
+        setContentView(UserDeviceManager.getLoadingView(this));
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -79,44 +73,54 @@ public class MainActivity extends AppBaseFragmentActivity {
                 });
             }
         }, 1000);
-
-
     }
+
+    public static class UiHandle{
+        CurrentSongAndInfoView headerlayout;
+        ViewPager pager;
+        SlidingTabLayout tabs;
+    }
+
+    UiHandle uiHandle = null;
+    private void initUiHandle(){
+        uiHandle = new UiHandle();
+        uiHandle.pager = (ViewPager) findViewById(R.id.pager);
+        uiHandle.tabs = (SlidingTabLayout) findViewById(R.id.tab_layout);
+
+        //takes care of creating and adding event listeners from onPause and onResume
+        uiHandle.headerlayout = (CurrentSongAndInfoView) findViewById(R.id.header_current_song);
+    }
+
 
     private void init(InitData data) {
         setContentView(R.layout.activity_main);
 
+        initUiHandle();
         VisualizerConfig.barHeight = (int) TeluguBeatsApp.getUiUtils().dp2px(100);
 
         appFragments = new AppFragments(getSupportFragmentManager());
-        mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setAdapter(appFragments);
+
+        //adds the fragments basically
+        initPagerAndHeader(appFragments);
+
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
             }
+
             @Override
             public void onPageSelected(int position) {
                 if (position == 1)//polls fragments
                     TeluguBeatsApp.broadcastEvent(TeluguBeatsApp.NotifierEvent.POLLS_RESET, TeluguBeatsApp.currentPoll);
             }
+
             @Override
             public void onPageScrollStateChanged(int state) {
             }
         });
-        mViewPager.post(new Runnable() {
-            @Override
-            public void run() {
-                TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-                tabLayout.setupWithViewPager(mViewPager);
-            }
-        });
+        uiHandle.tabs.setDistributeEvenly(true);
+
         notifySongChanged();
-//        for(String eventString : data.lastFewEvents){
-//            TeluguBeatsApp.onEvent(eventString);
-//        }
-
-
     }
 
     private void notifySongChanged() {
@@ -177,8 +181,10 @@ public class MainActivity extends AppBaseFragmentActivity {
         if ( timeElapsed > 10 * 60 * 1000){//10 minutes
             startIntentServices();//events listener service //restart
         }
+        //happens only after init
+        if(uiHandle!=null && uiHandle.headerlayout!=null)
+            uiHandle.headerlayout.onResume();
 
-        if(mBound) return;
         Intent svc=new Intent(this, MusicService.class);
         startService(svc);
         //connect to background service
@@ -202,11 +208,8 @@ public class MainActivity extends AppBaseFragmentActivity {
 
     @Override
     protected void onPause() {
-        //getServerCalls().cancelEvents();
-//        if(mBound) {
-//            unbindService(serviceConnection);
-//            mBound = false;
-//        }
+        if(uiHandle!=null && uiHandle.headerlayout!=null)
+        uiHandle.headerlayout.onPause();
         super.onPause();
     }
 
@@ -242,7 +245,7 @@ public class MainActivity extends AppBaseFragmentActivity {
     }
 
 
-    public class AppFragments extends FragmentStatePagerAdapter {
+    public class AppFragments extends FragmentPagerAdapter {
 
 
         public AppFragments(FragmentManager fm) {
@@ -253,17 +256,26 @@ public class MainActivity extends AppBaseFragmentActivity {
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-
+            Bundle args = new Bundle();
+            args.putInt(BaseViewPagerFragment.BUNDLE_FRAGMENT_INDEX, position);
             if (position == 0) {
-                return new CurrentSongAndEventsFragment();
+                //TODO: is just a list fragment with textinput to post
+                ChatAndEventsFragment chatFragment = new ChatAndEventsFragment();
+                chatFragment.setArguments(args);
+                return chatFragment;
             }
-            else if (position==1)
-                return new PollsFragment();
+            else if (position==1) {
+                PollsFragment pollsFragment = new PollsFragment();
+                pollsFragment.setArguments(args);
+                return pollsFragment;
+            }
 
-            else if (position==2)
-                return new LiveTalkFragment();
+            else if (position==2) {
+                LiveTalkFragment liveTalkFragment = new LiveTalkFragment();
+                liveTalkFragment.setArguments(args);
+                return liveTalkFragment;
+            }
             return null;
-
         }
 
         @Override

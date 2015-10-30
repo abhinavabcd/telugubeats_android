@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<me.relex.seamlessviewpagerheader.widget.TouchCallbackLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    android:id="@+id/layout"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+<android.support.v4.view.ViewPager
+    android:layout_marginTop="@dimen/tabs_height"
+    android:id="@+id/pager"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"/>
 
-    <android.support.design.widget.TabLayout
-            app:tabIndicatorColor="@color/neon_blue"
+<LinearLayout
+    android:id="@+id/header"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.appsandlabs.telugubeats.widgets.CurrentSongAndInfoView
+        android:id="@+id/header_current_song"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+    </com.appsandlabs.telugubeats.widgets.CurrentSongAndInfoView>
+
+    <me.relex.seamlessviewpagerheader.widget.SlidingTabLayout
+        app:tabIndicatorColor="@color/neon_blue"
+        android:background="@color/translucent_black_dark"
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="@dimen/tabs_height"/>
 
-    <android.support.v4.view.ViewPager
-        android:id="@+id/pager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+
 </LinearLayout>
+
+</me.relex.seamlessviewpagerheader.widget.TouchCallbackLayout>
