@@ -147,6 +147,7 @@ public class TeluguBeatsApp extends Application {
     public static UiUtils getUiUtils() {
         return uiUtils;
     }
+
     public static UserDeviceManager getUserDeviceManager() {
         return userDeviceManager;
     }

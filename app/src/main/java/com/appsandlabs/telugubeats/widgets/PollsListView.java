@@ -24,6 +24,7 @@ import com.appsandlabs.telugubeats.response_models.PollsChanged;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
 import static com.appsandlabs.telugubeats.helpers.UiUtils.getColorFromResource;
@@ -34,7 +35,6 @@ import static com.appsandlabs.telugubeats.helpers.UiUtils.getColorFromResource;
 public class PollsListView extends ListView {
 
     private final ArrayList<PollItem> polls;
-    private int total = 0;
     static final int DO_POLL = 1000;
     static final int DEALYED_SERVER_CALL_TIME = 5000;
     private PollItem currentVotedItem = null;
@@ -50,8 +50,7 @@ public class PollsListView extends ListView {
             });
         }
     };
-
-
+    private int maxPoll = 0;
 
 
     public static class UiHandle{
@@ -86,6 +85,13 @@ public class PollsListView extends ListView {
     public PollsListView(final Context context, AttributeSet attrs) {
         super(context, attrs);
         setAdapter(new ArrayAdapter<PollItem>(context, -1, polls = new ArrayList<PollItem>()) {
+
+
+            @Override
+            public void notifyDataSetChanged() {
+                super.notifyDataSetChanged();
+            }
+
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 final PollItem poll = getItem(position);
@@ -112,7 +118,7 @@ public class PollsListView extends ListView {
 
                 if (poll.pollCount > 0) {
                     ((ViewGroup) uiHandle.pollPercentage.getParent()).setVisibility(View.VISIBLE);
-                    float pollPercentage = (poll.pollCount * 1.0f) / total;
+                    float pollPercentage = (poll.pollCount * 1.0f) / maxPoll;
                     ((LinearLayout.LayoutParams) uiHandle.pollPercentage.getLayoutParams()).weight = pollPercentage;
                     uiHandle.pollCount.setText(poll.pollCount == 0 ? "0 votes" : "" + poll.pollCount + " votes");
                     //pollView.getCell("dummy").wgt(1.0f - pollPercentage);
@@ -154,7 +160,6 @@ public class PollsListView extends ListView {
 //        setExpanded(true);
 //        setScrollContainer(false);
 
-
     }
 
     private synchronized void doUserPoll(PollItem poll) {
@@ -162,25 +167,27 @@ public class PollsListView extends ListView {
             currentVotedItem.isVoted = false;
             if(currentVotedItem.pollCount>0) {
                 currentVotedItem.pollCount--;
-                total--;
             }
         }
         poll.isVoted = true;
         currentVotedItem  = poll;
         poll.pollCount++;
-        total++;
+
+        maxPoll = TeluguBeatsApp.currentPoll.getMaxPolls();
     }
 
-    public int caulculateTotalPolls(){
-        total = 0;
-        for(int i=0;i< polls.size();i++){
-            total += polls.get(i).pollCount;
-        }
-        return total;
-    }
+
+//    public int caulculateTotalPolls(){
+//        total = 0;
+//        for(int i=0;i< polls.size();i++){
+//            total  = Math.max( total ,  polls.get(i).pollCount);
+//        }
+//        return total;
+//    }
 
     public void resetPolls(Poll poll){
         this.polls.clear();
+        Random random = new Random();
         currentVotedItem = null;
         for(PollItem pollItem : poll.pollItems){
             this.polls.add(pollItem);
@@ -188,7 +195,9 @@ public class PollsListView extends ListView {
             if(pollItem.isVoted)
                 currentVotedItem = pollItem;
         }
-        caulculateTotalPolls();
+
+        maxPoll = TeluguBeatsApp.currentPoll.getMaxPolls();
+
         ((ArrayAdapter)getAdapter()).notifyDataSetChanged();
     }
 

@@ -15,7 +15,14 @@ public class Poll extends  BaseModel{
     @SerializedName("stream_id")
     public String streamId;
 
-
+    public int getMaxPolls(){
+        if(pollItems==null) return 1;
+        int max = 1;
+        for (PollItem pollItem : pollItems) {
+            max = pollItem.pollCount>max ? pollItem.pollCount : max;
+        }
+        return max;
+    }
 
     public static PollItem getChangedPoll(PollsChanged data){
         for(PollsChanged.PollChange change : data.pollChanges) {
