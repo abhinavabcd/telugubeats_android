@@ -59,7 +59,7 @@ class RandomSelector <T>{
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
     public static final String SERVER_ADDR = "http://telugubeats.appsandlabs.com";
-//    public static final String SERVER_ADDR = "http://192.168.0.102:8888";
+//    public static final String SERVER_ADDR = "http://192.168.0.101:8888";
     public static String streamId = "telugu";
     private final TeluguBeatsApp app;
 
@@ -75,7 +75,6 @@ public class ServerCalls {
         if(UserDeviceManager.getAuthKey()!=null)
             client.addHeader("auth-key", UserDeviceManager.getAuthKey());
     }
-    static Gson gson = new Gson();
 
     public static void setUserGCMKey(final Context context, String registrationId, final GenericListener<Boolean> dataInputListener) {
 //		String url = SERVER_ADDR+"/func?task=setGCMRegistrationId";
@@ -123,7 +122,7 @@ public class ServerCalls {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String temp = new String(responseBody);
-                InitData initData = gson.fromJson(temp, InitData.class);
+                InitData initData = new Gson().fromJson(temp, InitData.class);
                 initData.setCurrentPoll();
                 listener.onData(initData);
             }
@@ -163,7 +162,7 @@ public class ServerCalls {
         client.post(SERVER_ADDR + "/user/login", params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                User user = gson.fromJson(new String(responseBody), User.class);
+                User user = new Gson().fromJson(new String(responseBody), User.class);
                 client.addHeader("auth-key", user.auth_key);
                 listener.onData(user);
             }

@@ -1,6 +1,7 @@
 package com.appsandlabs.telugubeats.adapters;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,12 +46,12 @@ public class FeedViewAdapter extends ArrayAdapter<Event> {
 
     @Override
     public int getViewTypeCount() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getItemViewType(int position) {
-        return 0;
+        return getItem(position).eventId== Event.EventId.CHAT_MESSAGE?0:1;
     }
 
     @Override
@@ -67,9 +68,18 @@ public class FeedViewAdapter extends ArrayAdapter<Event> {
         }
         uiHandle = (UiHandle) convertView.getTag();
 //        Picasso.with(getContext()).load(uiHandle.image
-        if(evt.fromUser!=null)
-            uiHandle.userName.setText(evt.fromUser.name);
-        uiHandle.userMessage.setText(UiText.getFeedString(evt));
+        if(evt.eventId == Event.EventId.CHAT_MESSAGE) {
+            if (evt.fromUser != null)
+                uiHandle.userName.setText(evt.fromUser.name);
+            uiHandle.userMessage.setText(UiText.getFeedString(evt));
+        }
+        else{
+            if (evt.fromUser != null)
+                uiHandle.userName.setText(evt.fromUser.name + " " + UiText.getFeedString(evt));
+            uiHandle.userName.setGravity(Gravity.CENTER_HORIZONTAL);
+            uiHandle.userMessage.setVisibility(View.GONE);
+        }
+
         return convertView;
     }
 }

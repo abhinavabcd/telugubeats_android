@@ -21,6 +21,8 @@ import com.appsandlabs.telugubeats.widgets.PollsListView;
 import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
 import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
 
+import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
+
 /**
  * Created by abhinav on 10/2/15.
  */
@@ -96,7 +98,11 @@ public class PollsFragment extends BaseViewPagerFragment implements AppEventList
     public void onResume() {
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
         TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
-        uiHandle.livePollsList.resetPolls(TeluguBeatsApp.currentPoll);
+        if(TeluguBeatsApp.currentPoll!=null)
+            uiHandle.livePollsList.resetPolls(TeluguBeatsApp.currentPoll);
+        else{
+            logd("poll items none");
+        }
         super.onResume();
     }
 

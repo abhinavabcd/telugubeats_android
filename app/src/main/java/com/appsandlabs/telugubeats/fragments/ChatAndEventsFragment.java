@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -37,7 +38,7 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
 
 
     @Override public boolean isViewBeingDragged(MotionEvent event) {
-        return mAbsListViewDelegate.isViewBeingDragged(event, uiHandle.telugubeatsEvents);
+        return true;
     }
 
     public static class UiHandle{
@@ -62,11 +63,11 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
 
-
         layout = (ViewGroup) inflater.inflate(R.layout.events_fragment_layout, null);
 
         uiHandle = initUiHandle(layout);
 
+        uiHandle.telugubeatsEvents.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_NORMAL);
         uiHandle.telugubeatsEvents.setAdapter(new FeedViewAdapter(getContext(), 0, TeluguBeatsApp.getLastFewFeedEvents()));
 
 
@@ -76,7 +77,7 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    ((FeedViewAdapter)uiHandle.telugubeatsEvents.getAdapter()).notifyDataSetChanged();
+                    UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
                 }
             }
         });
@@ -92,7 +93,13 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
             }
         });
 
+        uiHandle.saySomethingText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
 
+            }
+        });
         UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
         return layout;
     }

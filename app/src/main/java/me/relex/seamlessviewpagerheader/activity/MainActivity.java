@@ -48,29 +48,34 @@ public class MainActivity extends AppBaseFragmentActivity
 	}
 
 
-    public void initPagerAndHeader(PagerAdapter adapter){
-        setContentView(R.layout.activity_main);
-
+    public void initPagerAndHeaderLayout(final TouchCallbackLayout layout , final View headerLayout , final SlidingTabLayout tabs ,  final ViewPager pager , final PagerAdapter adapter){
         mTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         mTabHeight = getResources().getDimensionPixelSize(R.dimen.tabs_height);
-        mHeaderHeight = getResources().getDimensionPixelSize(R.dimen.viewpager_header_height);
 
-        mViewPagerHeaderHelper = new ViewPagerHeaderHelper(this, this);
+        mViewPagerHeaderHelper = new ViewPagerHeaderHelper(MainActivity.this, MainActivity.this);
 
-        TouchCallbackLayout touchCallbackLayout = (TouchCallbackLayout) findViewById(R.id.layout);
-        touchCallbackLayout.setTouchEventListener(this);
+        layout.setTouchEventListener(MainActivity.this);
 
-        mHeaderLayoutView = findViewById(R.id.header);
+        mHeaderLayoutView = headerLayout;
 
-        SlidingTabLayout slidingTabLayout = (SlidingTabLayout) findViewById(R.id.tab_layout);
-        //slidingTabLayout.setDistributeEvenly(true);
+        tabs.setDistributeEvenly(true);
 
-        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager = pager;
         mViewPager.setAdapter(adapter);
 
-        slidingTabLayout.setViewPager(mViewPager);
+        tabs.setViewPager(mViewPager);
 
-        ViewCompat.setTranslationY(mViewPager, mHeaderHeight);
+        readjustSlidingTabLayout(headerLayout);
+    }
+
+    public void readjustSlidingTabLayout(final View headerLayout) {
+        headerLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                mHeaderHeight =  headerLayout.getHeight() - mTabHeight;
+                ViewCompat.setTranslationY(mViewPager, mHeaderHeight);
+            }
+        });
     }
 
     @Override

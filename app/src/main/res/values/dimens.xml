@@ -11,6 +11,5 @@
 
 
     <dimen name="tabs_height">48dp</dimen>
-    <dimen name="viewpager_header_height">144dp</dimen>
 
 </resources>

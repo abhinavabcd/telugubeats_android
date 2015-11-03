@@ -26,6 +26,7 @@ import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -70,13 +71,13 @@ public class TeluguBeatsApp extends Application {
     }
 
     public static Song currentSong;
-    public static Gson gson = new Gson();
+    public static Gson gson = null;
     public static User currentUser;
     public static Handler onSongChanged= null;
     public static Handler onSongPlayPaused = null;
     public static Handler showDeletenotification= null;
     public static Bitmap blurredCurrentSongBg = null;
-    private static List<Event> lastFewFeedEvents = new ArrayList<>();
+    private static List<Event> lastFewFeedEvents = null;
     private static ServerCalls serverCalls;
     public static Bitmap songAlbumArt = null;
     public static long lastSongRestTime;
@@ -110,13 +111,16 @@ public class TeluguBeatsApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        //create old shit
+        onAllActivitiesDestroyed();
         Fabric.with(this, new Crashlytics());
         sfd_ser = getApplicationContext().getResources().openRawResource(R.raw.sfd);
         applicationContext = getApplicationContext();
+        lastFewFeedEvents = new ArrayList<>();
         uiUtils = new UiUtils(this);
         userDeviceManager = new UserDeviceManager(this);
         serverCalls = new ServerCalls(this);
-
+        gson = new Gson();
         nActivities = new AtomicInteger(0);
 
         analytics = GoogleAnalytics.getInstance(this);
@@ -163,8 +167,12 @@ public class TeluguBeatsApp extends Application {
         currentActivity = null;
         eventListeners.clear();
         blurredCurrentSongBg = null;
-        serverCalls.closeAll();
-        lastFewFeedEvents.clear();
+        if(serverCalls!=null) {
+            serverCalls.closeAll();
+        }
+        serverCalls = null;
+        if(lastFewFeedEvents!=null)
+            lastFewFeedEvents.clear();
 
 
 
@@ -189,7 +197,8 @@ public class TeluguBeatsApp extends Application {
         showDeletenotification= null;
         blurredCurrentSongBg = null;
         serverCalls = null;
-        songAlbumArt = null;
+
+        nActivities.set(0);
         TeluguBeatsApp.showDeletenotification = null;
     }
 
@@ -216,12 +225,24 @@ public class TeluguBeatsApp extends Application {
 
 
     public static Event onEvent(String eventString){
-        Event event = TeluguBeatsApp.gson.fromJson(eventString , Event.class);
-        return onEvent(event, true);
+        try {
+            Event event = TeluguBeatsApp.gson.fromJson(eventString, Event.class);
+            return onEvent(event, true);
+        }
+        catch(JsonSyntaxException ex){
+            logd("json exception");
+        }
+        return null;
     }
     public static Event onEvent(String eventString, boolean doBroadcast){
-        Event event = TeluguBeatsApp.gson.fromJson(eventString , Event.class);
-        return onEvent(event, doBroadcast);
+        try{
+            Event event = TeluguBeatsApp.gson.fromJson(eventString , Event.class);
+            return onEvent(event, doBroadcast);
+        }
+        catch(JsonSyntaxException ex){
+            logd("json exception");
+        }
+        return null;
     }
     public static Event onEvent(Event event, boolean doBroadcast) {
             logd("recieved event "+event.eventId.toString());

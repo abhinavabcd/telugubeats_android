@@ -33,11 +33,11 @@ public enum UiText {
 
             case POLLS_CHANGED:
                 PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
-                feed = "voted up for " + Poll.getChangedPollSongTitle(pollsChanged);
+                feed = "voted up for \"" + Poll.getChangedPollSongTitle(pollsChanged)+"\"";
                 //TODO: indicate modified vote here
                 break;
             case DEDICATE:
-                feed ="dedicated this song to " + event.payload;
+                feed ="dedicated this song to \'" + event.payload+"\'";
                 break;
 
             case CHAT_MESSAGE:
