@@ -2,6 +2,7 @@ package com.appsandlabs.telugubeats.services;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -73,7 +74,6 @@ public class EventsListenerService extends IntentService {
         URL url = null;
         Log.e(Config.ERR_LOG_TAG, "Events listener has started ");
         try {
-            gracefullyCloseInpStream(); // fuck you ,  release the stream atleast :'( : P
             url = new URL(ServerCalls.SERVER_ADDR + "/stream/" + ServerCalls.streamId + eventsRenewPath);
             eventsRenewPath = "/events_renew";
             con = (HttpURLConnection) url.openConnection();
@@ -130,11 +130,11 @@ public class EventsListenerService extends IntentService {
         } catch (IOException | IllegalStateException e) {
             Log.e(Config.ERR_LOG_TAG, "Scanner is closed , restarting : "+(3-count));
             if(count-->0){
-                startReadingEvents();
+                //startReadingEvents();
                 return;
             }
             else{
-                Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_SHORT).show();
             }
         }
         Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
@@ -157,15 +157,23 @@ public class EventsListenerService extends IntentService {
     }
 
     private void gracefullyCloseInpStream() {
-        if(inpStream!=null) {
-            try {
-                inpStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+        new AsyncTask<Void, Void, Void>(){
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                if(inpStream!=null) {
+                    try {
+                        inpStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    finally {
+                        inpStream = null;
+                    }
+                }
+                return null;
             }
-            finally {
-                inpStream = null;
-            }
-        }
+        }.execute();
     }
 }

@@ -85,6 +85,8 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     private AppEventListener songChangeListener;
     private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
     private boolean loaded;
+    private Handler renewEventsHandler = null;
+    private Runnable renewEventsRunnable = null;
 
 
     public static class UiHandle{
@@ -153,6 +155,14 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         //clear old shit
         isFirstTimeFlag  = true;
         logd("main activity created");
+
+        renewEventsHandler = new Handler();
+        renewEventsRunnable = new Runnable() {
+            @Override
+            public void run() {
+                startIntentServices();
+            }
+        };
 
         VisualizerConfig.barHeight = (int) TeluguBeatsApp.getUiUtils().dp2px(100);
         hLinesPaint = new Paint();
@@ -498,6 +508,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     protected void onResume() {
         super.onResume();
         logd("main activity resumed");
+        renewEventsHandler.postDelayed(renewEventsRunnable, 10 * 60 * 1000);//after 10 minutes
         long timeElapsed = new Date().getTime()- lastEventsServiceStartTimeStamp;
         if ( timeElapsed > 10 * 60 * 1000){//10 minutes
             startIntentServices();//events listener service //restart
@@ -584,6 +595,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener);
         }
+        renewEventsHandler.removeCallbacks(renewEventsRunnable);
         super.onPause();
     }
 
