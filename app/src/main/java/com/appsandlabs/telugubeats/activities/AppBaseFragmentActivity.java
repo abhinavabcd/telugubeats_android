@@ -14,6 +14,7 @@ public class AppBaseFragmentActivity extends FragmentActivity {
 
 
     private GenericListener4<Integer, Integer, Intent, Void> activityResultListener;
+    public int applicationLaunchId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -73,4 +74,7 @@ public class AppBaseFragmentActivity extends FragmentActivity {
     }
 
 
+    public void setApplicationLaunchId(int applicationLaunchId) {
+        this.applicationLaunchId = applicationLaunchId;
+    }
 }

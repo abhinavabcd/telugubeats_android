@@ -4,7 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
-import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
 import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
@@ -33,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric.sdk.android.Fabric;
@@ -64,6 +64,7 @@ public class TeluguBeatsApp extends Application {
 
 
     public static Poll currentPoll= null;
+    private static int applicationLaunchId;
 
     public static void setCurrentSong(Song currentSong) {
         TeluguBeatsApp.currentSong = currentSong;
@@ -107,21 +108,23 @@ public class TeluguBeatsApp extends Application {
         return serverCalls;
     }
 
+    boolean hasInitied = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
         //create old shit
+        applicationLaunchId = new Random().nextInt(10000);
         onAllActivitiesDestroyed();
         Fabric.with(this, new Crashlytics());
         sfd_ser = getApplicationContext().getResources().openRawResource(R.raw.sfd);
         applicationContext = getApplicationContext();
         lastFewFeedEvents = new ArrayList<>();
-        uiUtils = new UiUtils(this);
-        userDeviceManager = new UserDeviceManager(this);
-        serverCalls = new ServerCalls(this);
+        uiUtils = new UiUtils();
+        userDeviceManager = new UserDeviceManager();
+        serverCalls = new ServerCalls();
         gson = new Gson();
-        nActivities = new AtomicInteger(0);
+        nActivities = new AtomicInteger     (0);
 
         analytics = GoogleAnalytics.getInstance(this);
 
@@ -205,18 +208,26 @@ public class TeluguBeatsApp extends Application {
 
 
     public static AtomicInteger nActivities = new AtomicInteger(0);
-    public static void onActivityDestroyed(FragmentActivity activity) {
+    public static void onActivityDestroyed(AppBaseFragmentActivity activity) {
+        if(activity.applicationLaunchId!=applicationLaunchId) {
+            // oldActivity
+            return;
+        }
         int d = nActivities.decrementAndGet();
         if(d==0){
             onAllActivitiesDestroyed();
         }
     }
 
-    public static void onActivityCreated(FragmentActivity activity) {
+    public static void onActivityCreated(AppBaseFragmentActivity activity) {
+        activity.setApplicationLaunchId(applicationLaunchId);
+        if(userDeviceManager==null){ //not yet inited
+
+        }
         nActivities.incrementAndGet();
     }
 
-    public static void onActivityPaused(FragmentActivity activity){
+    public static void onActivityPaused(AppBaseFragmentActivity activity){
         currentActivity = null;
     }
 

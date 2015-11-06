@@ -61,14 +61,12 @@ public class ServerCalls {
     public static final String SERVER_ADDR = "http://telugubeats.appsandlabs.com";
 //    public static final String SERVER_ADDR = "http://192.168.0.101:8888";
     public static String streamId = "telugu";
-    private final TeluguBeatsApp app;
 
 
     AsyncHttpClient client = new AsyncHttpClient();
     private AsyncTask<Void, String, Void> eventsListenerTask;
 
-    public ServerCalls(TeluguBeatsApp app){
-        this.app = app;
+    public ServerCalls(){
         client.setMaxRetriesAndTimeout(1, 5000);
         client.setTimeout(4000);
         client.setMaxConnections(100);

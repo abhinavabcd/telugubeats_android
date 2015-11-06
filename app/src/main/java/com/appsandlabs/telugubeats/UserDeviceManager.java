@@ -27,8 +27,7 @@ public class UserDeviceManager {
 	private boolean initializedPreferences = false;
 	private TeluguBeatsApp app;
 	
-	public UserDeviceManager(TeluguBeatsApp app) {
-		this.app = app;
+	public UserDeviceManager() {
 		initializePreferences(app.getContext());
 		hasJustInstalled = isFirstTimeUser();// false only after first call to getFeed from server
 		UserDeviceManager.getDeviceId(app.getContentResolver());

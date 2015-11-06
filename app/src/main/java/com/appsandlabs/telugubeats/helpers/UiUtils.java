@@ -109,14 +109,12 @@ public class UiUtils {
 		}
 	}
 
-	private TeluguBeatsApp app;
 	private Animation animationSlideInLeft;
 	private Animation animationSlideOutRight;
 	private Animation animationSlideInRight;
 	private Animation animationSlideOutLeft;
 
-	public UiUtils(TeluguBeatsApp app) {
-		this.app = app;
+	public UiUtils() {
 
 //       animationSlideInLeft = AnimationUtils.loadAnimation(app.getContext(),
 //			   R.anim.slide_in_left);
@@ -170,7 +168,7 @@ public class UiUtils {
 		try {
 			if (uiBlockCount == 0) {
 				preloaderText = UiText.TEXT_LOADING.getValue();
-				preloader = new CustomLoadingDialog(app.getContext(), preloaderText);
+				preloader = new CustomLoadingDialog(TeluguBeatsApp.getContext(), preloaderText);
 				preloader.show();
 			}
 			uiBlockCount++;
@@ -185,7 +183,7 @@ public class UiUtils {
 		try {
 			if (uiBlockCount == 0) {
 				preloaderText = text;
-				preloader = new CustomLoadingDialog(app.getContext(), preloaderText);
+				preloader = new CustomLoadingDialog(TeluguBeatsApp.getContext(), preloaderText);
 				preloader.show();
 			} else {
 				if (!preloaderText.toString().endsWith(text)) {
@@ -248,7 +246,7 @@ public class UiUtils {
 			@Override
 			public void run() {
 				// TODO: NullPointerException after when pressing back button to exit quiz
-				FragmentActivity activity = app.getCurrentActivity();
+				FragmentActivity activity = TeluguBeatsApp.getCurrentActivity();
 				if (activity != null)
 					(activity).runOnUiThread(new Runnable() {
 
@@ -601,7 +599,7 @@ public class UiUtils {
 
 	public float getInDp(int i) {
 		if (oneDp == -1) {
-			oneDp = app.getResources().getDimension(R.dimen.one_dp);
+			oneDp = TeluguBeatsApp.getContext().getResources().getDimension(R.dimen.one_dp);
 		}
 		return i * oneDp;
 	}
@@ -610,14 +608,14 @@ public class UiUtils {
 
 	public float getInSp(int i) {
 		if (oneSp == -1) {
-			oneSp = app.getResources().getDimension(R.dimen.one_sp);
+			oneSp = TeluguBeatsApp.getContext().getResources().getDimension(R.dimen.one_sp);
 		}
 		return i * oneSp;
 	}
 
 	public int dp2px(int dp) {
 		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
-				app.getResources().getDisplayMetrics());
+				TeluguBeatsApp.getContext().getResources().getDisplayMetrics());
 	}
 
 	public static ListView setListViewHeightBasedOnChildren2(ListView myListView) {
@@ -707,7 +705,7 @@ public class UiUtils {
 		extraView.measure(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 
 		// kv : May need to replace 'getSherlockActivity()' with 'this' or 'getActivity()'
-		Display display = app.getCurrentActivity().getWindowManager().getDefaultDisplay();
+		Display display = TeluguBeatsApp.getCurrentActivity().getWindowManager().getDefaultDisplay();
 		linearLayout.removeAllViews();
 		int maxWidth = display.getWidth() - extraView.getMeasuredWidth() - 20;
 
@@ -1035,12 +1033,12 @@ public class UiUtils {
 
 
 	public void promptInput(String title, int charLimit, String prevStatus, String okText , final GenericListener<String> dataInputListener) {
-		final Dialog prompt = new Dialog(app.getContext(),R.style.CustomDialogTheme3);
+		final Dialog prompt = new Dialog(TeluguBeatsApp.getContext(),R.style.CustomDialogTheme3);
 		ImageView closeButton;
 		TextView titleView;
 		final EditText messageContent;
 		TextView okButton;
-		LinearLayout baseLayout = (LinearLayout)app.getCurrentActivity().getLayoutInflater().inflate(R.layout.input_prompt, null);
+		LinearLayout baseLayout = (LinearLayout)TeluguBeatsApp.getCurrentActivity().getLayoutInflater().inflate(R.layout.input_prompt, null);
 
 		closeButton = (ImageView) baseLayout.findViewById(R.id.close_button);
 		titleView = (TextView) baseLayout.findViewById(R.id.title);
