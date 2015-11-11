@@ -15,7 +15,7 @@ You may want to see the app in working here
 https://storage.googleapis.com/telugubeats_files/apk/telugubeats_app-release.apk
 
 
-<img src="https://storage.googleapis.com/telugubeats_files/screenshots/S51015-131518.jpg" width="150px" />
-<img src="https://storage.googleapis.com/telugubeats_files/screenshots/S51015-131521.jpg" width="150px" />
-<img src="https://storage.googleapis.com/telugubeats_files/screenshots/S51015-131507.jpg" width="150px" />
-<img src="https://storage.googleapis.com/telugubeats_files/screenshots/S51015-131541.jpg" width="150px" />
+<img src="https://storage.googleapis.com/telugubeats_files/screenshots/1.jpg" width="150px" />
+<img src="https://storage.googleapis.com/telugubeats_files/screenshots/2.jpg" width="150px" />
+<img src="https://storage.googleapis.com/telugubeats_files/screenshots/3.jpg" width="150px" />
+<img src="https://storage.googleapis.com/telugubeats_files/screenshots/4.jpg" width="150px" />
