@@ -7,6 +7,7 @@ import android.view.View;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.UserDeviceManager;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.loginutils.FacebookLoginHelper;
@@ -27,7 +28,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if(TeluguBeatsApp.getUserDeviceManager().isLoggedInUser()){
+        if(UserDeviceManager.isLoggedInUser(this)){
            goToMainActivity();
             return;
         }

@@ -146,7 +146,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
 
         super.onCreate(savedInstanceState);
 
-        if(!TeluguBeatsApp.getUserDeviceManager().isLoggedInUser()){
+        if(!UserDeviceManager.isLoggedInUser(this)){
             goToLoginActivity();
             return;
         }
@@ -160,7 +160,10 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         renewEventsRunnable = new Runnable() {
             @Override
             public void run() {
-                startIntentServices();
+                long timeElapsed = new Date().getTime()- lastEventsServiceStartTimeStamp;
+                if ( timeElapsed > 7 * 60 * 1000){//10 minutes
+                    startIntentServices();//events listener service //restart
+                }
             }
         };
 
@@ -205,7 +208,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         initUiHandle(this);
         addVisualizerView();
         uiHandle.tabs.setDistributeEvenly(true);
-
+        loaded = true;
         initAndResetHeaderView();
         notifySongChanged();
 
@@ -508,12 +511,8 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     protected void onResume() {
         super.onResume();
         logd("main activity resumed");
-        renewEventsHandler.postDelayed(renewEventsRunnable, 10 * 60 * 1000);//after 10 minutes
-        long timeElapsed = new Date().getTime()- lastEventsServiceStartTimeStamp;
-        if ( timeElapsed > 10 * 60 * 1000){//10 minutes
-            startIntentServices();//events listener service //restart
-        }
-
+        renewEventsRunnable.run();
+//        renewEventsHandler.postDelayed(renewEventsRunnable, 7 * 60 * 1000);//after 7 minutes
 
         if(loaded){
             initAndResetHeaderView();
@@ -542,6 +541,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     }
 
     private void initAndResetHeaderView() {
+        logd("Resetting listeners and headerview");
         TeluguBeatsApp.onFFTData = new GenericListener<float[]>(){
             @Override
             public void onData(float[] l , float[] r) {
@@ -557,21 +557,26 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         };
 
         resetCurrentSong();
-        if(MusicService.done){
-            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
-        }
-        else{
-            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
-        }
+//        if(MusicService.done){
+//            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+//        }
+//        else{
+//            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+//        }
         uiHandle.playPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (TeluguBeatsApp.onSongPlayPaused != null) {
+                if(UserDeviceManager.isRapidReClick(100)){
+                    return;
+                }
+                Handler playPauseHandler = TeluguBeatsApp.onSongPlayPaused;
+                if (playPauseHandler != null) {
+                    playPauseHandler.removeMessages(0);//remove queued handlers
                     if (MusicService.done) {//already paused => play now{
-                        TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 0));
+                        playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 0));
                         UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
                     } else {
-                        TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 1));
+                        playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 1));
                         UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
 
                     }
@@ -595,7 +600,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener);
         }
-        renewEventsHandler.removeCallbacks(renewEventsRunnable);
+///        renewEventsHandler.removeCallbacks(renewEventsRunnable);
         super.onPause();
     }
 

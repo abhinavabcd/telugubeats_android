@@ -15,6 +15,8 @@ import com.appsandlabs.telugubeats.helpers.UiUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserDeviceManager {
 
@@ -25,12 +27,13 @@ public class UserDeviceManager {
 	
 	
 	private boolean initializedPreferences = false;
-	private TeluguBeatsApp app;
-	
+
+	static Map<Integer, Long> reclickHashMap = new HashMap<Integer, Long>();
 	public UserDeviceManager() {
-		initializePreferences(app.getContext());
+		initializePreferences(TeluguBeatsApp.getContext());
 		hasJustInstalled = isFirstTimeUser();// false only after first call to getFeed from server
-		UserDeviceManager.getDeviceId(app.getContentResolver());
+		UserDeviceManager.getDeviceId(TeluguBeatsApp.getContext().getContentResolver());
+		reclickHashMap.clear();
 	}
 		
 	// initialized on the main screen
@@ -161,8 +164,19 @@ public class UserDeviceManager {
 		return null;
 	}
 
-	public boolean isLoggedInUser() {
-		return getAuthKey()!=null;
+	public static boolean isLoggedInUser(Context context) {
+		return getAuthKey(context)!=null;
+	}
+
+
+	public static boolean isRapidReClick(int i) {
+		Long lastClick = reclickHashMap.get(i);
+		boolean ret = true;
+		if(lastClick==null || lastClick < System.nanoTime() - 1000000000){
+			ret = false;
+		}
+		reclickHashMap.put(i, System.nanoTime());
+		return ret;
 	}
 
 
@@ -186,10 +200,12 @@ public class UserDeviceManager {
 	}
 
 	String encodedKey;
-
-	public static String getAuthKey() {
+	public static String getAuthKey(){
+		return getAuthKey(TeluguBeatsApp.getContext());
+	}
+	public static String getAuthKey(Context context) {
 		// TODO Auto-generated method stub
-		String encodedKey = getPreference(TeluguBeatsApp.getContext(),Config.PREF_ENCODED_KEY, null);
+		String encodedKey = getPreference(context,Config.PREF_ENCODED_KEY, null);
 
 		try {
 			if(encodedKey==null) return null;

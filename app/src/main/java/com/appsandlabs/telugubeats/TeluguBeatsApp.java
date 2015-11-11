@@ -20,6 +20,7 @@ import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
+import com.appsandlabs.telugubeats.services.MusicService;
 import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.HitBuilders;
@@ -50,7 +51,10 @@ public class TeluguBeatsApp extends Application {
     /**
      * The default app tracker. The field is from onCreate callback when the application is
      * initially created.
+     *
      */
+
+    public static final int SONG_PLAY_PAUSE = 1010;
     private static Tracker tracker;
     public static HashMap<NotificationReciever.NotificationType, ArrayList<NotificationReciever.NotificationPayload>> pendingNotifications = new HashMap<NotificationReciever.NotificationType, ArrayList<NotificationReciever.NotificationPayload>>();
     public static NotifificationProcessingState nState = NotifificationProcessingState.CONTINUE;
@@ -75,7 +79,7 @@ public class TeluguBeatsApp extends Application {
     public static Gson gson = null;
     public static User currentUser;
     public static Handler onSongChanged= null;
-    public static Handler onSongPlayPaused = null;
+    public static MusicService.PlayPauseHandler onSongPlayPaused = null;
     public static Handler showDeletenotification= null;
     public static Bitmap blurredCurrentSongBg = null;
     private static List<Event> lastFewFeedEvents = null;
@@ -167,7 +171,6 @@ public class TeluguBeatsApp extends Application {
         if(TeluguBeatsApp.showDeletenotification!=null)
             TeluguBeatsApp.showDeletenotification.sendMessage( TeluguBeatsApp.showDeletenotification.obtainMessage());
         uiUtils = null;
-        applicationContext = null;
         currentActivity = null;
         eventListeners.clear();
         blurredCurrentSongBg = null;

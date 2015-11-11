@@ -3,6 +3,7 @@ package com.appsandlabs.telugubeats.recievers;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.util.Log;
 
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
@@ -18,15 +19,15 @@ public class NotificationBroadcast extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-
+		Handler playPauseHandler = TeluguBeatsApp.onSongPlayPaused;
+		if(playPauseHandler==null) return;
 		Log.e(Config.ERR_LOG_TAG, "recieved intent "+intent);
 		if (intent.getAction().equals(MusicService.NOTIFY_PLAY)) {
-			TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0,0));
+			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 0));
 		} else if (intent.getAction().equals(MusicService.NOTIFY_PAUSE)) {
-			TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 1));
-		}
-		else if (intent.getAction().equals(MusicService.NOTIFY_DELETE)) {
-			TeluguBeatsApp.onSongPlayPaused.sendMessage(TeluguBeatsApp.onSongPlayPaused.obtainMessage(0, 2));
+			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 1));
+		} else if (intent.getAction().equals(MusicService.NOTIFY_DELETE)) {
+			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 2));
 		}
 	}
 }

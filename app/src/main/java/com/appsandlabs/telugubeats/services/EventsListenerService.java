@@ -39,6 +39,7 @@ public class EventsListenerService extends IntentService {
     @Override
     public void onCreate() {
         eventsRenewPath = "/events";
+        count = 3;
         super.onCreate();
     }
 

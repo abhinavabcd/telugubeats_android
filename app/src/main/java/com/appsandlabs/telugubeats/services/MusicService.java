@@ -37,6 +37,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -200,29 +201,44 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 return false;
             }
         });
-        TeluguBeatsApp.onSongPlayPaused = new Handler(new Handler.Callback() {
+        TeluguBeatsApp.onSongPlayPaused = new PlayPauseHandler(this);
+    }
+
+
+    public static class PlayPauseHandler extends Handler{
+
+            public volatile WeakReference<MusicService> ref;
+
+            public PlayPauseHandler(MusicService ref){
+                super();
+                this.ref = new WeakReference<MusicService>(ref);
+            }
+
+
             @Override
-            public boolean handleMessage(Message msg) {
-//                String message = (String)msg.obj;
+            public void handleMessage(Message msg) {
                 Log.e(Config.ERR_LOG_TAG, "recieved msg to handler " + msg);
+                int what = msg.what;
+                MusicService ref = this.ref.get();
+                if(ref==null) return;
+
                 Integer shouldPlay = (Integer) msg.obj;
                 if(shouldPlay==0){
-                    playStream();
-                    newNotification();
+                    ref.playStream();
+                    ref.newNotification();
                 }
                 else if (shouldPlay==1){
-                    stopStream();
-                    newNotification();
+                    ref.stopStream();
+                    ref.newNotification();
                 }
                 else{
-                    stopStream();
-                    stopSelf();
-                    stopForeground(true);
+                    ref.stopStream();
+                    ref.stopSelf();
+                    ref.stopForeground(true);
                 }
-                return false;
             }
-        });
-    }
+
+    };
 
 
     @Override
@@ -274,7 +290,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
 
 
-    public static boolean done;
+    public static boolean done = false;
     private float[] fftArrayLeft;
     private float[] fftArrayRight;
 
@@ -540,7 +556,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private boolean playStream() {
         synchronized (sync) {
             if(!done && playingThread!=null && playingThread.isAlive()) return false;
-            done = false;
             // 1. Acquire audio focus
             if (!mAudioFocusGranted && requestAudioFocus()) {
                 // 2. Kill off any other play back sources
