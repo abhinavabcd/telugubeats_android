@@ -1,6 +1,8 @@
 package com.appsandlabs.telugubeats.activities;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -14,8 +16,8 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.IntentCompat;
@@ -30,39 +32,37 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
-import com.appsandlabs.telugubeats.UserDeviceManager;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
+import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener2;
 import com.appsandlabs.telugubeats.fragments.ChatAndEventsFragment;
 import com.appsandlabs.telugubeats.fragments.LiveTalkFragment;
 import com.appsandlabs.telugubeats.fragments.PollsFragment;
+import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
-import com.appsandlabs.telugubeats.models.InitData;
+import com.appsandlabs.telugubeats.models.Stream;
 import com.appsandlabs.telugubeats.recievers.EventDataReceiver;
 import com.appsandlabs.telugubeats.services.EventsListenerService;
-import com.appsandlabs.telugubeats.services.MusicService;
+import com.appsandlabs.telugubeats.services.StreamingService;
+import com.google.gson.Gson;
 
 import java.util.Date;
 import java.util.concurrent.Callable;
 
 import bolts.Continuation;
 import bolts.Task;
-import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
-import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
-import me.relex.seamlessviewpagerheader.widget.SlidingTabLayout;
-import me.relex.seamlessviewpagerheader.widget.TouchCallbackLayout;
 
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
-import static com.appsandlabs.telugubeats.helpers.UiUtils.getColorFromResource;
 
-public class MainActivity extends me.relex.seamlessviewpagerheader.activity.MainActivity {
+public class StreamActivity extends FragmentActivity {
 
-    MusicService musicService;
+    StreamingService musicService;
     public ServiceConnection serviceConnection;
     private AppFragments appFragments;
     private Intent eventReaderService;
@@ -80,20 +80,17 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     private float[] barHeightsLeft = new float[VisualizerConfig.nBars];
     private float[] barHeightsRight = new float[VisualizerConfig.nBars];
     private View visualizerView;
-    private Bitmap mBitmap;
-    private AppEventListener blurredBgListener;
-    private AppEventListener songChangeListener;
-    private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
     private boolean loaded;
-    private Handler renewEventsHandler = null;
-    private Runnable renewEventsRunnable = null;
+    private App app;
+    private String streamId;
+    private BroadcastReceiver receiver;
+    private boolean isStreamPlaying = false;
+    private boolean isFirstTimeStreamLoad = true;
 
 
     public static class UiHandle{
 
         ViewPager pager;
-        SlidingTabLayout tabs;
-        TouchCallbackLayout mainLayout;
         LinearLayout headerLayout;
 
         TextView songAndTitle;
@@ -112,7 +109,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
 
     UiHandle uiHandle = new UiHandle();
 
-    public UiHandle initUiHandle(MainActivity layout){
+    public UiHandle initUiHandle(StreamActivity layout){
 
         uiHandle.songAndTitle = (TextView)layout.findViewById(R.id.song_and_title);
 
@@ -130,8 +127,6 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         uiHandle.playPauseButton = (Button)layout.findViewById(R.id.play_pause_button);
 
         uiHandle.pager = (ViewPager) findViewById(R.id.pager);
-        uiHandle.tabs = (SlidingTabLayout) findViewById(R.id.tab_layout);
-        uiHandle.mainLayout = (TouchCallbackLayout) findViewById(R.id.layout);
         uiHandle.headerLayout = (LinearLayout)findViewById(R.id.header);
         uiHandle.currentSongHeader = (LinearLayout)findViewById(R.id.current_song_header);
         //takes care of creating and adding event listeners from onPause and onResume
@@ -146,28 +141,31 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
 
         super.onCreate(savedInstanceState);
 
-        if(!UserDeviceManager.isLoggedInUser(this)){
+        setContentView(R.layout.activity_main);
+        initUiHandle(this);
+        addVisualizerView();
+
+
+        app = new App(this);
+        if(getIntent().getExtras()==null)
+            streamId = "telugu";
+        else {
+            streamId = getIntent().getExtras().getString(Constants.STREAM_ID);
+        }
+
+
+
+        if (!app.getUserDeviceManager().isLoggedInUser(this)) {
             goToLoginActivity();
             return;
         }
 
 
+
         //clear old shit
-        isFirstTimeFlag  = true;
-        logd("main activity created");
+        isFirstTimeFlag = true;
 
-        renewEventsHandler = new Handler();
-        renewEventsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                long timeElapsed = new Date().getTime()- lastEventsServiceStartTimeStamp;
-                if ( timeElapsed > 7 * 60 * 1000){//10 minutes
-                    startIntentServices();//events listener service //restart
-                }
-            }
-        };
-
-        VisualizerConfig.barHeight = (int) TeluguBeatsApp.getUiUtils().dp2px(100);
+        VisualizerConfig.barHeight = (int) app.getUiUtils().dp2px(100);
         hLinesPaint = new Paint();
         hLinesPaint.setColor(getResources().getColor(android.R.color.transparent));
         hLinesPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
@@ -175,50 +173,61 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
 
         barPaint = new Paint();
         barPaint.setStrokeWidth(1);
-        barPaint.setShader(new LinearGradient(0, 0, 0, VisualizerConfig.barHeight, getColorFromResource(R.color.malachite), Color.argb(255, 200, 200, 200), Shader.TileMode.MIRROR));
+        barPaint.setShader(new LinearGradient(0, 0, 0, VisualizerConfig.barHeight, app.getUiUtils().getColorFromResource(R.color.malachite), Color.argb(255, 200, 200, 200), Shader.TileMode.MIRROR));
         barPaint.setStyle(Paint.Style.FILL);
 
-        EventsListenerService.isDestroyed = false;
-        setContentView(UserDeviceManager.getLoadingView(this));
-        new Handler().postDelayed(new Runnable() {
+        registerStreamInfoChangeListener();
+
+
+        startStreamService(streamId);
+
+
+    }
+
+    private void registerStreamInfoChangeListener() {
+        IntentFilter filter = new IntentFilter(Constants.STREAM_CHANGED_BROADCAST_ACTION);
+
+         receiver = new BroadcastReceiver() {
             @Override
-            public void run() {
-                getServerCalls().loadInitData(new GenericListener<InitData>() {
-                    @Override
-                    public void onData(InitData data) {
-                        TeluguBeatsApp.currentPoll = data.poll;
-                        TeluguBeatsApp.setCurrentSong(data.currentSong);
-                        TeluguBeatsApp.currentUser = data.user;
-                        TeluguBeatsApp.blurredCurrentSongBg = null;
-                        if (data.lastFewEvents != null) {
-                            for (String eventData : data.lastFewEvents) {
-                                TeluguBeatsApp.onEvent(eventData, false);
-                            }
+            public void onReceive(Context context, Intent intent) {
+                if(intent.getExtras()!=null){
+                    if(intent.getExtras().getBoolean(Constants.STREAM_STARTED)){
+                        displayStreamInfo(StreamingService.stream);
+                        if(isFirstTimeStreamLoad){
+                            isFirstTimeStreamLoad = false;
+                            displayStreamTabs();
                         }
-                        init(data);
+                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
                     }
-                });
+                    else if(intent.getExtras().getBoolean(Constants.STREAM_STOPPED)){
+                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+                    }
+
+                }
             }
-        }, 0);
+        };
+        registerReceiver(receiver, filter);
+    }
+
+    private void onStreamStarted(Stream stream) {
+
+    }
+
+    private void unregisterStreamChangeListener(){
+        unregisterReceiver(receiver);
     }
 
 
-    private void init(InitData data) {
-        setContentView(R.layout.activity_main);
-        initUiHandle(this);
-        addVisualizerView();
-        uiHandle.tabs.setDistributeEvenly(true);
-        loaded = true;
+    private void displayStreamTabs(){
+        appFragments = new AppFragments(getSupportFragmentManager());
+
+    }
+    private void displayStreamInfo(Stream newStream) {
         initAndResetHeaderView();
         notifySongChanged();
 
 
-
-
-        appFragments = new AppFragments(getSupportFragmentManager());
-
         //adds the fragments basically
-        initPagerAndHeaderLayout(uiHandle.mainLayout , uiHandle.headerLayout , uiHandle.tabs ,  uiHandle.pager,  appFragments);
 
         uiHandle.pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -228,13 +237,25 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
             @Override
             public void onPageSelected(int position) {
                 if (position == 1)//polls fragments
-                    TeluguBeatsApp.broadcastEvent(TeluguBeatsApp.NotifierEvent.POLLS_RESET, TeluguBeatsApp.currentPoll);
+                    app.getEventsHelper().broadcastEvent(EventsHelper.Event.POLLS_RESET, TeluguBeatsApp.currentPoll);
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
             }
         });
+    }
+
+    private void startStreamService(String streamId) {
+        Intent svc=new Intent(this, StreamingService.class);
+        svc.putExtra(Constants.STREAM_ID, streamId);
+        startService(svc);
+    }
+
+    private void stopStreamService() {
+        Intent svc=new Intent(this, StreamingService.class);
+        svc.setAction(StreamingService.NOTIFY_PAUSE);
+        startService(svc);
     }
 
 
@@ -446,9 +467,9 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
                                 sharingIntent.putExtra(Intent.EXTRA_TEXT, link);
                                 sharingIntent.setPackage("com.whatsapp");
 
-                                if(sharingIntent.resolveActivity(getPackageManager()) != null)
+                                if (sharingIntent.resolveActivity(getPackageManager()) != null)
                                     startActivityForResult(sharingIntent, 0);
-                                Toast.makeText(MainActivity.this, UiText.UNABLE_TO_OPEN_INTENT.getValue(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(StreamActivity.this, UiText.UNABLE_TO_OPEN_INTENT.getValue(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -471,11 +492,6 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         eventsBroadcastReceiver = new EventDataReceiver();
         registerReceiver(eventsBroadcastReceiver, filter);
 
-    }
-
-    @Override
-    protected void unregisterRecievers(){
-        unregisterReceiver(eventsBroadcastReceiver);
     }
 
     boolean isFirstTimeFlag = true;
@@ -519,13 +535,14 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         }
 
 
-        Intent svc=new Intent(this, MusicService.class);
+        Intent svc=new Intent(this, StreamingService.class);
         startService(svc);
+
         //connect to background service
 //        bindService(svc, serviceConnection = new ServiceConnection() {
 //            @Override
 //            public void onServiceConnected(ComponentName name, IBinder service) {
-//                MusicService.MusicServiceBinder binder = (MusicService.MusicServiceBinder) service;
+//                StreamingService.MusicServiceBinder binder = (StreamingService.MusicServiceBinder) service;
 //                musicService = binder.getService();
 //                //start downloading and playing stream
 //                mBound = true;
@@ -541,8 +558,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     }
 
     private void initAndResetHeaderView() {
-        logd("Resetting listeners and headerview");
-        TeluguBeatsApp.onFFTData = new GenericListener<float[]>(){
+        TeluguBeatsApp.onFFTData = new GenericListener2<float[], float[]>(){
             @Override
             public void onData(float[] l , float[] r) {
                 fftDataLeft = new float[l.length];
@@ -557,7 +573,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         };
 
         resetCurrentSong();
-//        if(MusicService.done){
+//        if(StreamingService.isNotPlaying){
 //            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
 //        }
 //        else{
@@ -566,21 +582,16 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         uiHandle.playPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(UserDeviceManager.isRapidReClick(100)){
+                if(app.getUserDeviceManager().isRapidReClick(100)){
                     return;
                 }
-                Handler playPauseHandler = TeluguBeatsApp.onSongPlayPaused;
-                if (playPauseHandler != null) {
-                    playPauseHandler.removeMessages(0);//remove queued handlers
-                    if (MusicService.done) {//already paused => play now{
-                        playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 0));
-                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
-                    } else {
-                        playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 1));
-                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+                if(isStreamPlaying){
+                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+                    Intent stopStreamIntent = new Intent()
 
-                    }
-
+                }
+                else {
+                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
                 }
             }
         });
@@ -600,16 +611,16 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
             TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener);
         }
-///        renewEventsHandler.removeCallbacks(renewEventsRunnable);
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
         // unpause it from notification or something else
-//        musicService.pause = true;
+
         TeluguBeatsApp.onActivityDestroyed(this);
         notifySongChanged();
+        StreamingService.keepSilenced = true;
         super.onDestroy();
     }
 
@@ -647,23 +658,18 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            Bundle args = new Bundle();
-            args.putInt(BaseViewPagerFragment.BUNDLE_FRAGMENT_INDEX, position);
             if (position == 0) {
                 //TODO: is just a list fragment with textinput to post
                 ChatAndEventsFragment chatFragment = new ChatAndEventsFragment();
-                chatFragment.setArguments(args);
                 return chatFragment;
             }
             else if (position==1) {
                 PollsFragment pollsFragment = new PollsFragment();
-                pollsFragment.setArguments(args);
                 return pollsFragment;
             }
 
             else if (position==2) {
                 LiveTalkFragment liveTalkFragment = new LiveTalkFragment();
-                liveTalkFragment.setArguments(args);
                 return liveTalkFragment;
             }
             return null;
@@ -704,7 +710,7 @@ public class MainActivity extends me.relex.seamlessviewpagerheader.activity.Main
     }
 
     private void goToLoginActivity() {
-        Intent i = new Intent(MainActivity.this, LoginActivity.class);
+        Intent i = new Intent(StreamActivity.this, LoginActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | IntentCompat.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(i);
         finish();

@@ -4,6 +4,7 @@ import com.appsandlabs.telugubeats.models.Event;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
+import com.google.gson.Gson;
 
 /**
  * Created by abhinav on 9/27/15.
@@ -27,12 +28,12 @@ public enum UiText {
     }
 
 
-    public static String getFeedString(Event event) {
+    public String getFeedString(Event event) {
         String feed= null;
         switch (event.eventId) {
 
             case POLLS_CHANGED:
-                PollsChanged pollsChanged = TeluguBeatsApp.gson.fromJson(event.payload, PollsChanged.class);
+                PollsChanged pollsChanged = new Gson().fromJson(event.payload, PollsChanged.class);
                 feed = "voted up for \"" + Poll.getChangedPollSongTitle(pollsChanged)+"\"";
                 //TODO: indicate modified vote here
                 break;

@@ -3,6 +3,7 @@ package com.appsandlabs.telugubeats.fragments;
 import android.content.Context;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,14 +20,13 @@ import com.appsandlabs.telugubeats.response_models.PollsChanged;
 import com.appsandlabs.telugubeats.widgets.PollsListView;
 
 import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
-import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
 
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
 
 /**
  * Created by abhinav on 10/2/15.
  */
-public class PollsFragment extends BaseViewPagerFragment implements AppEventListener {
+public class PollsFragment extends Fragment implements AppEventListener {
     private AppEventListener blurredBgListener;
     private LinearLayout layout;
 

@@ -1,6 +1,7 @@
 package com.appsandlabs.telugubeats.fragments;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,12 +10,10 @@ import android.widget.Toast;
 
 import com.appsandlabs.telugubeats.R;
 
-import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
-
 /**
  * Created by abhinav on 10/2/15.
  */
-public class LiveTalkFragment extends BaseViewPagerFragment {
+public class LiveTalkFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

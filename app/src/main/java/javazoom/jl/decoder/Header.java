@@ -31,6 +31,8 @@
  */
 package javazoom.jl.decoder;
 
+import com.appsandlabs.telugubeats.helpers.DebugUtils;
+
 /**
  * Class for extracting information from a frame header.
  */
@@ -117,8 +119,7 @@ public final class Header
 		int headerstring;
 		int channel_bitrate;
 		boolean sync = false;
-		do
-		{
+		do{
 			headerstring = stream.syncHeader(syncmode);
 			_headerstring = headerstring; // E.B
 			if (syncmode == Bitstream.INITIAL_SYNC)
@@ -151,8 +152,7 @@ public final class Header
 			// calculate number of subbands:
 			if (h_layer == 1)
 				h_number_of_subbands = 32;
-			else
-			{
+			else{
 				channel_bitrate = h_bitrate_index;
 				// calculate bitrate per channel:
 				if (h_mode != SINGLE_CHANNEL)
@@ -193,7 +193,9 @@ public final class Header
 			}
 			else
 			{
+				String h = DebugUtils.intToString(headerstring, 4);
 				stream.unreadFrame();
+
 			}
 		}
 		while (!sync);

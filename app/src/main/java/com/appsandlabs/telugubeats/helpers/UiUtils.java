@@ -3,9 +3,6 @@ package com.appsandlabs.telugubeats.helpers;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -17,10 +14,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Looper;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
@@ -47,10 +42,8 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.appsandlabs.telugubeats.NotificationReciever;
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.activities.MainActivity;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.widgets.CustomLoadingDialog;
@@ -74,6 +67,9 @@ import bolts.Task;
 
 public class UiUtils {
 
+
+	private final App app;
+	private final Context context;
 
 	public enum Images {
 		MAP_MARKER_ICON("icons/marker.png"),
@@ -109,12 +105,10 @@ public class UiUtils {
 		}
 	}
 
-	private Animation animationSlideInLeft;
-	private Animation animationSlideOutRight;
-	private Animation animationSlideInRight;
-	private Animation animationSlideOutLeft;
 
-	public UiUtils() {
+	public UiUtils(App app, Context context) {
+		this.app = app;
+		this.context  = context;
 
 //       animationSlideInLeft = AnimationUtils.loadAnimation(app.getContext(),
 //			   R.anim.slide_in_left);
@@ -130,12 +124,7 @@ public class UiUtils {
 //       animationSlideInRight.setAnimationListener(app);
 	}
 
-	public boolean isOutAnimation(Animation animation) {
-		if (animation == animationSlideOutLeft || animation == animationSlideOutRight) {
-			return true;
-		}
-		return false;
-	}
+
 
 	public static enum UiText {
 		NO_PREVIOUS_MESSAGES("No Previous Messages"),
@@ -160,15 +149,15 @@ public class UiUtils {
 	}
 
 
-	private static int uiBlockCount = 0;
-	private static CustomLoadingDialog preloader = null;
-	private static CharSequence preloaderText;
+	private int uiBlockCount = 0;
+	private CustomLoadingDialog preloader = null;
+	private CharSequence preloaderText;
 
 	public synchronized void addUiBlock() {
 		try {
 			if (uiBlockCount == 0) {
 				preloaderText = UiText.TEXT_LOADING.getValue();
-				preloader = new CustomLoadingDialog(TeluguBeatsApp.getContext(), preloaderText);
+				preloader = new CustomLoadingDialog(context, preloaderText);
 				preloader.show();
 			}
 			uiBlockCount++;
@@ -183,7 +172,7 @@ public class UiUtils {
 		try {
 			if (uiBlockCount == 0) {
 				preloaderText = text;
-				preloader = new CustomLoadingDialog(TeluguBeatsApp.getContext(), preloaderText);
+				preloader = new CustomLoadingDialog(context, preloaderText);
 				preloader.show();
 			} else {
 				if (!preloaderText.toString().endsWith(text)) {
@@ -226,7 +215,7 @@ public class UiUtils {
 	}
 
 	@SuppressLint("NewApi")
-	public static void setBg(final View view, String url) {
+	public void setBg(final View view, String url) {
 		getRequestCreatorTask(url, false).onSuccess(new Continuation<RequestCreator, Void>() {
 			@Override
 			public Void then(Task<RequestCreator> task) throws Exception {
@@ -237,7 +226,7 @@ public class UiUtils {
 		}, Task.UI_THREAD_EXECUTOR);
 	}
 
-	public Timer setInterval(int millis, final GenericListener<Integer> listener) {
+	public Timer setInterval(final FragmentActivity activity , int millis, final GenericListener<Integer> listener) {
 		// TODO Auto-generated constructor stub
 		Timer timer = (new Timer());
 		timer.schedule(new TimerTask() {
@@ -246,7 +235,6 @@ public class UiUtils {
 			@Override
 			public void run() {
 				// TODO: NullPointerException after when pressing back button to exit quiz
-				FragmentActivity activity = TeluguBeatsApp.getCurrentActivity();
 				if (activity != null)
 					(activity).runOnUiThread(new Runnable() {
 
@@ -265,44 +253,6 @@ public class UiUtils {
 		return timer;
 	}
 
-	public static void generateNotification(Context pContext, String titleText, String message, Bundle b) {
-		int notificationId = Config.NOTIFICATION_ID;
-		int type = b != null ? b.getInt(Config.NOTIFICATION_KEY_MESSAGE_TYPE, -1) : -1;
-		if (titleText == null) {
-			titleText = pContext.getResources().getString(R.string.app_name);
-		}
-		switch (NotificationReciever.getNotificationTypeFromInt(type)) {
-			case DONT_KNOW:
-				break;
-		}
-
-		NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(pContext)
-				.setSmallIcon(R.drawable.ic_launcher).setContentTitle(titleText)
-				.setContentText(message);
-		notificationBuilder.setWhen(System.currentTimeMillis()).setAutoCancel(true);
-		notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
-		Intent resultIntent = new Intent(pContext, MainActivity.class);
-		resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		if (b != null)
-			resultIntent.putExtras(b);
-		// The stack builder object will contain an artificial back stack for the
-		// started Activity.
-		// This ensures that navigating backward from the Activity leads out of
-		// your application to the Home screen.
-//        TaskStackBuilder stackBuilder = TaskStackBuilder.create(pContext);
-//        // Adds the back stack for the Intent (but not the Intent itself)
-//        stackBuilder.addParentStack(CalendarView.class);
-//        // Adds the Intent that starts the Activity to the top of the stack
-//        stackBuilder.addNextIntent(resultIntent);
-		PendingIntent resultPendingIntent = PendingIntent.getActivity(pContext, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-		notificationBuilder.setContentIntent(resultPendingIntent);
-		NotificationManager mNotificationManager = (NotificationManager) pContext.getSystemService(Context.NOTIFICATION_SERVICE);
-		mNotificationManager.notify(notificationId, notificationBuilder.build()); //will show a notification and when clicked will open the app.
-	}
-
-	public static void generateNotification(Context pContext, String message) {
-		generateNotification(pContext, null, message, null);
-	}
 
 	public static void sendSMS(Context context, String phoneNumber, String text) {
 		Uri smsUri = Uri.parse("tel:+" + phoneNumber);
@@ -354,30 +304,15 @@ public class UiUtils {
 	}
 
 
-	public Animation getAnimationSlideOutRight() {
-		return animationSlideOutRight;
-	}
-
-	public Animation getAnimationSlideOutLeft() {
-		return animationSlideOutLeft;
-	}
-
-	public Animation getAnimationSlideInLeft() {
-		return animationSlideInLeft;
-	}
-
-	public Animation getAnimationSlideInRight() {
-		return animationSlideInRight;
-	}
 
 
-	public static Task<RequestCreator> getRequestCreatorTask(final String assetPath, final boolean downloadToAssets) {
+	public Task<RequestCreator> getRequestCreatorTask(final String assetPath, final boolean downloadToAssets) {
 		return Task.call(new Callable<RequestCreator>() {
 			@Override
 			public RequestCreator call() throws Exception {
 
 				if (assetPath.startsWith("http://") || assetPath.startsWith("https://")) {
-					return Picasso.with(TeluguBeatsApp.getContext()).load(assetPath);//.error(R.drawable.error_image);
+					return Picasso.with(context).load(assetPath);//.error(R.drawable.error_image);
 				}
 //				try {
 //					InputStream ims = app.getContext().getAssets().open("images/" + assetPath); //assets folder
@@ -394,7 +329,7 @@ public class UiUtils {
 
 //				Log.d(Config.QUIZAPP_ERR_LOG_TAG, "loading from CDN");
 
-				RequestCreator requestCreator = Picasso.with(TeluguBeatsApp.getContext()).load(ServerCalls.CDN_PATH + assetPath);//.error(R.drawable.error_image);
+				RequestCreator requestCreator = Picasso.with(context).load(ServerCalls.CDN_PATH + assetPath);//.error(R.drawable.error_image);
 
 //				if(downloadToAssets) {
 //					try {
@@ -513,16 +448,16 @@ public class UiUtils {
 		return true;
 	}
 
-	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
+	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, null);
 	}
 
 
-	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
+	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, -1, -1, t);
 	}
 
-	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, final int width, final int height, final Transformation transformation) {
+	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, final int width, final int height, final Transformation transformation) {
 		return getRequestCreatorTask(assetPath, downloadToAssets).onSuccess(new Continuation<RequestCreator, RequestCreator>() {
 
 			@Override
@@ -541,7 +476,7 @@ public class UiUtils {
 	}
 
 
-	public static void loadImageAsBg(final View view, final String assetPath, boolean downloadToAssets) {
+	public void loadImageAsBg(final View view, final String assetPath, boolean downloadToAssets) {
 		if (assetPath == null || assetPath.isEmpty())
 			return;
 		Task.callInBackground(new Callable<Bitmap>() {
@@ -549,7 +484,7 @@ public class UiUtils {
 			public Bitmap call() throws Exception {
 				RequestCreator requestCreator = null;
 				if (assetPath.startsWith("http://") || assetPath.startsWith("https://")) {
-					requestCreator = Picasso.with(TeluguBeatsApp.getContext()).load(assetPath);//.error(R.drawable.error_image);
+					requestCreator = Picasso.with(context).load(assetPath);//.error(R.drawable.error_image);
 				}
 //				try {
 //					InputStream ims = app.getContext().getAssets().open("images/" + assetPath); //assets folder
@@ -564,7 +499,7 @@ public class UiUtils {
 //					return Picasso.with(app.getContext()).load(file).error(R.drawable.error_image);
 //				}
 				if (requestCreator == null)
-					requestCreator = Picasso.with(TeluguBeatsApp.getContext()).load(ServerCalls.CDN_PATH + assetPath);//.error(R.drawable.error_image);
+					requestCreator = Picasso.with(context).load(ServerCalls.CDN_PATH + assetPath);//.error(R.drawable.error_image);
 				return requestCreator.get();
 			}
 		}).onSuccess(new Continuation<Bitmap, Void>() {
@@ -599,7 +534,7 @@ public class UiUtils {
 
 	public float getInDp(int i) {
 		if (oneDp == -1) {
-			oneDp = TeluguBeatsApp.getContext().getResources().getDimension(R.dimen.one_dp);
+			oneDp = context.getResources().getDimension(R.dimen.one_dp);
 		}
 		return i * oneDp;
 	}
@@ -608,14 +543,14 @@ public class UiUtils {
 
 	public float getInSp(int i) {
 		if (oneSp == -1) {
-			oneSp = TeluguBeatsApp.getContext().getResources().getDimension(R.dimen.one_sp);
+			oneSp = context.getResources().getDimension(R.dimen.one_sp);
 		}
 		return i * oneSp;
 	}
 
 	public int dp2px(int dp) {
 		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
-				TeluguBeatsApp.getContext().getResources().getDisplayMetrics());
+				context.getResources().getDisplayMetrics());
 	}
 
 	public static ListView setListViewHeightBasedOnChildren2(ListView myListView) {
@@ -687,8 +622,8 @@ public class UiUtils {
 	}
 
 
-	public static Point getScreenDimetions(TeluguBeatsApp app) {
-		WindowManager w = app.getCurrentActivity().getWindowManager();
+	public static Point getScreenDimetions(Activity activity) {
+		WindowManager w = activity.getWindowManager();
 		Point point = new Point();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
 			Point size = new Point();
@@ -701,11 +636,11 @@ public class UiUtils {
 		return point;
 	}
 
-	public void populateViews(LinearLayout linearLayout, View[] views, Context context, View extraView) {
+	public void populateViews(FragmentActivity activity , LinearLayout linearLayout, View[] views, Context context, View extraView) {
 		extraView.measure(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 
 		// kv : May need to replace 'getSherlockActivity()' with 'this' or 'getActivity()'
-		Display display = TeluguBeatsApp.getCurrentActivity().getWindowManager().getDefaultDisplay();
+		Display display = activity.getWindowManager().getDefaultDisplay();
 		linearLayout.removeAllViews();
 		int maxWidth = display.getWidth() - extraView.getMeasuredWidth() - 20;
 
@@ -749,8 +684,8 @@ public class UiUtils {
 		linearLayout.addView(newLL);
 	}
 
-	public static int getColorFromResource(int id) {
-		return TeluguBeatsApp.getContext().getResources().getColor(id);
+	public  int getColorFromResource(int id) {
+		return context.getResources().getColor(id);
 	}
 
 
@@ -980,7 +915,7 @@ public class UiUtils {
 	}
 
 
-	public static void getBitmapFromURL(final String imageUrl, final GenericListener<Bitmap> genericListener) {
+	public void getBitmapFromURL(final String imageUrl, final GenericListener<Bitmap> genericListener) {
 		Task.callInBackground(new Callable<Bitmap>() {
 			@Override
 			public Bitmap call() throws Exception {
@@ -995,7 +930,7 @@ public class UiUtils {
 		});
 	}
 
-	public static Bitmap getBitmapFromURL(String src) {
+	public Bitmap getBitmapFromURL(String src) {
 		try {
 			URL url = new URL(src);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -1010,7 +945,7 @@ public class UiUtils {
 		}
 	}
 
-	public static void scrollToBottom(final ListView listView) {
+	public void scrollToBottom(final ListView listView) {
 		listView.post(new Runnable() {
 			@Override
 			public void run() {
@@ -1021,24 +956,24 @@ public class UiUtils {
 	}
 
 
-	public static void scrollToBottom(final ScrollView scroll){
+	public void scrollToBottom(final ScrollView scroll){
 		scroll.post(new Runnable() {
 			@Override
 			public void run() {
-				scroll.scrollTo(0, scroll.getBottom()+TeluguBeatsApp.getUiUtils().dp2px(450));
+				scroll.scrollTo(0, scroll.getBottom() + dp2px(450));
 			}
 		});
 	}
 
 
 
-	public void promptInput(String title, int charLimit, String prevStatus, String okText , final GenericListener<String> dataInputListener) {
-		final Dialog prompt = new Dialog(TeluguBeatsApp.getContext(),R.style.CustomDialogTheme3);
+	public void promptInput(FragmentActivity activity , String title, int charLimit, String prevStatus, String okText , final GenericListener<String> dataInputListener) {
+		final Dialog prompt = new Dialog(context,R.style.CustomDialogTheme3);
 		ImageView closeButton;
 		TextView titleView;
 		final EditText messageContent;
 		TextView okButton;
-		LinearLayout baseLayout = (LinearLayout)TeluguBeatsApp.getCurrentActivity().getLayoutInflater().inflate(R.layout.input_prompt, null);
+		LinearLayout baseLayout = (LinearLayout)activity.getLayoutInflater().inflate(R.layout.input_prompt, null);
 
 		closeButton = (ImageView) baseLayout.findViewById(R.id.close_button);
 		titleView = (TextView) baseLayout.findViewById(R.id.title);

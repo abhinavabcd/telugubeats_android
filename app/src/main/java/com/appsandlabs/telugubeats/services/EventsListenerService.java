@@ -37,7 +37,7 @@ public class EventsListenerService extends IntentService {
     }
 
     @Override
-    public void onCreate() {
+    public void onCreate() {//called one time
         eventsRenewPath = "/events";
         count = 3;
         super.onCreate();
@@ -99,8 +99,7 @@ public class EventsListenerService extends IntentService {
             }
             if(bytesRead<=0){
                 logd("server closed connection lets restart");
-                startReadingEvents();
-                return;
+                throw(new IOException());
             }
 //            Scanner inputStream = new Scanner(new InputStreamReader((inpStream)));
 //            inputStream.useDelimiter("\r\n");
@@ -177,4 +176,6 @@ public class EventsListenerService extends IntentService {
             }
         }.execute();
     }
+
+
 }

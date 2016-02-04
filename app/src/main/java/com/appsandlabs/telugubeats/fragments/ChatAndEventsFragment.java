@@ -3,6 +3,7 @@ package com.appsandlabs.telugubeats.fragments;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,32 +15,24 @@ import android.widget.ListView;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.activities.MainActivity;
+import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.interfaces.AppEventListener;
 
-import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
-import me.relex.seamlessviewpagerheader.fragment.BaseViewPagerFragment;
-
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.getContext;
 import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
 
 /**
  * Created by abhinav on 10/2/15.
  */
-public class ChatAndEventsFragment extends BaseViewPagerFragment {
+public class ChatAndEventsFragment extends Fragment {
 
 
     private ViewGroup layout;
     private AppEventListener feedChangeListener;
     private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
 
-
-    @Override public boolean isViewBeingDragged(MotionEvent event) {
-        return true;
-    }
 
     public static class UiHandle{
 
@@ -68,7 +61,7 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
         uiHandle = initUiHandle(layout);
 
         uiHandle.telugubeatsEvents.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_NORMAL);
-        uiHandle.telugubeatsEvents.setAdapter(new FeedViewAdapter(getContext(), 0, TeluguBeatsApp.getLastFewFeedEvents()));
+        uiHandle.telugubeatsEvents.setAdapter(new FeedViewAdapter(getActivity(), 0, TeluguBeatsApp.getLastFewFeedEvents()));
 
 
 
@@ -126,7 +119,7 @@ public class ChatAndEventsFragment extends BaseViewPagerFragment {
     }
 
     private void restartEventListenerService() {
-        ((MainActivity)getActivity()).startIntentServices();
+        ((StreamActivity)getActivity()).startIntentServices();
     }
 
     @Override

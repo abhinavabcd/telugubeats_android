@@ -8,6 +8,7 @@ public class Config {
     public static final String GCM_SAVED = "gcm_saved";
     public static final String ERR_LOG_TAG = "telugubeats_error_log";
     public static final String DEBUG_LOG_TAG = "telugubeats_error_log";
+    public static final String SHARED_PREFS_FILE = "chaicafe_pref_file";
     public static  String APP_LOADING_VIEW_IMAGE = null;
     public static final String REGISTRATION_COMPLETE = "registration_complete";
     public static final String PREF_ENCODED_KEY = "user_auth_key";
@@ -16,6 +17,9 @@ public class Config {
     public static final String NOTIFICATION_KEY_MESSAGE_TYPE = "messageType";
     public static final String NOTIFICATION_KEY_TEXT_MESSAGE = "message";
     public static final String GCM_NOTIFICATION_INTENT_ACTION = "com.appsandlabs.gcmnotification";
+
+    public static String PREF_INSTALLATION_KEY = "pref_installation_key";
+    public static String PREF_GCM_SAVED = "pref_gcm_saved";
 
 
     public static boolean currentVersionSupportBigNotification() {

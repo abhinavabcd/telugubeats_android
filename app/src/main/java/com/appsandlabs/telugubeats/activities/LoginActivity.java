@@ -81,7 +81,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
     }
 
     private void goToMainActivity() {
-        Intent i = new Intent(LoginActivity.this, MainActivity.class);
+        Intent i = new Intent(LoginActivity.this, StreamActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | IntentCompat.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(i);
         finish();

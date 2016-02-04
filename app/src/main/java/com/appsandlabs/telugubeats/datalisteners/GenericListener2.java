@@ -1,11 +1,11 @@
 package com.appsandlabs.telugubeats.datalisteners;
 
-public class GenericListener2<T1 , T2>{
+/**
+ * Created by saadhana on 09/06/15.
+ */
+public class GenericListener2<T, R> {
 
-
-	public void onData(T1 a , T2 b) {
-		// TODO Auto-generated method stub
-		return;
-	}
-
+    public void onData(T data1 , R data2){
+        return;
+    }
 }

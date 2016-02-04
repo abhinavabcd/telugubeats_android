@@ -35,6 +35,10 @@
 
 package javazoom.jl.decoder;
 
+import android.util.Log;
+
+import com.appsandlabs.telugubeats.config.Config;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -276,6 +280,7 @@ public final class Bitstream implements BitstreamErrors
 		}
 		catch (BitstreamException ex)
 		{
+			Log.d(Config.ERR_LOG_TAG, ex.getMessage());
 			if ((ex.getErrorCode()==INVALIDFRAME))
 			{
 				// Try to skip this frame.
@@ -313,6 +318,9 @@ public final class Bitstream implements BitstreamErrors
 		if (framesize == -1)
 		{
 			nextFrame();
+		}
+		else{
+			Log.d(Config.ERR_LOG_TAG, "frame size == -1");
 		}
 		return header;
 	}
@@ -651,5 +659,9 @@ public final class Bitstream implements BitstreamErrors
 			throw newBitstreamException(STREAM_ERROR, ex);
 		}
 		return totalBytesRead;
+	}
+
+	public byte[] getFrameBytes() {
+		return frame_bytes;
 	}
 }

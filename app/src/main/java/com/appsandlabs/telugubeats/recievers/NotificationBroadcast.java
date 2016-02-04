@@ -8,7 +8,7 @@ import android.util.Log;
 
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.config.Config;
-import com.appsandlabs.telugubeats.services.MusicService;
+import com.appsandlabs.telugubeats.services.StreamingService;
 
 public class NotificationBroadcast extends BroadcastReceiver {
 
@@ -22,11 +22,11 @@ public class NotificationBroadcast extends BroadcastReceiver {
 		Handler playPauseHandler = TeluguBeatsApp.onSongPlayPaused;
 		if(playPauseHandler==null) return;
 		Log.e(Config.ERR_LOG_TAG, "recieved intent "+intent);
-		if (intent.getAction().equals(MusicService.NOTIFY_PLAY)) {
+		if (intent.getAction().equals(StreamingService.NOTIFY_PLAY)) {
 			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 0));
-		} else if (intent.getAction().equals(MusicService.NOTIFY_PAUSE)) {
+		} else if (intent.getAction().equals(StreamingService.NOTIFY_PAUSE)) {
 			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 1));
-		} else if (intent.getAction().equals(MusicService.NOTIFY_DELETE)) {
+		} else if (intent.getAction().equals(StreamingService.NOTIFY_DELETE)) {
 			playPauseHandler.sendMessage(playPauseHandler.obtainMessage(0, 2));
 		}
 	}
