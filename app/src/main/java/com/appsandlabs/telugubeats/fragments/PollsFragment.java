@@ -1,53 +1,37 @@
 package com.appsandlabs.telugubeats.fragments;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.helpers.UiUtils;
-import com.appsandlabs.telugubeats.interfaces.AppEventListener;
+import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.models.Poll;
+import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.models.StreamEvent;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
+import com.appsandlabs.telugubeats.services.StreamingService;
 import com.appsandlabs.telugubeats.widgets.PollsListView;
-
-import me.relex.seamlessviewpagerheader.delegate.AbsListViewDelegate;
-
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.logd;
+import com.google.gson.Gson;
 
 /**
  * Created by abhinav on 10/2/15.
  */
-public class PollsFragment extends Fragment implements AppEventListener {
-    private AppEventListener blurredBgListener;
+public class PollsFragment extends Fragment {
     private LinearLayout layout;
-
-    @Override
-    public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-        switch (type){
-            case POLLS_CHANGED:
-                uiHandle.livePollsList.pollsChanged((PollsChanged) data);
-                break;
-            case POLLS_RESET:
-                uiHandle.livePollsList.resetPolls((Poll)data);
-                break;
-        }
-
-
-
-    }
-    private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
-    @Override public boolean isViewBeingDragged(MotionEvent event) {
-        return mAbsListViewDelegate.isViewBeingDragged(event, uiHandle.livePollsList);
-    }
+    private BroadcastReceiver pollEventsReciever;
+    private Gson gson = new Gson();
 
 
     public static class UiHandle{
@@ -73,43 +57,65 @@ public class PollsFragment extends Fragment implements AppEventListener {
 
         layout = (LinearLayout) inflater.inflate(R.layout.polls_fragment_layout, null);
         initUiHandle(layout);
+        final Stream stream = StreamingService.stream;
         Context ctx = inflater.getContext();
-        if (TeluguBeatsApp.currentPoll != null)
-            uiHandle.livePollsList.resetPolls(TeluguBeatsApp.currentPoll);
-
-
-        if(TeluguBeatsApp.blurredCurrentSongBg!=null){
-            UiUtils.setBg(layout, new BitmapDrawable(TeluguBeatsApp.blurredCurrentSongBg));
-        }
-
-        blurredBgListener = new AppEventListener() {
-            @Override
-            public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-                UiUtils.setBg(layout, new BitmapDrawable(TeluguBeatsApp.blurredCurrentSongBg));
-            }
-        };
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
-
         return layout;
     }
 
 
     @Override
     public void onResume() {
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
-        if(TeluguBeatsApp.currentPoll!=null)
-            uiHandle.livePollsList.resetPolls(TeluguBeatsApp.currentPoll);
-        else{
-            logd("poll items none");
-        }
+
+        pollEventsReciever = new BroadcastReceiver(){
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                final Stream stream = StreamingService.stream;
+                String eventId = intent.getExtras().getString(Constants.STREAM_EVENT_ID);
+                if(eventId!=null){
+                    StreamEvent event = stream.getEventById(eventId);
+                    if(event.eventId== StreamEvent.EventId.POLLS_CHANGED){
+                        uiHandle.livePollsList.pollsChanged(gson.fromJson(event.data, PollsChanged.class));
+                    }
+                    else if (event.eventId == StreamEvent.EventId.RESET_POLLS){
+                        new App(getActivity()).getServerCalls().getPollById(stream.streamId, event.data, new GenericListener<Poll>(){
+                            @Override
+                            public void onData(Poll poll) {
+                                stream.livePoll = poll;
+                                uiHandle.livePollsList.resetPolls(poll);
+                            }
+                        });
+                    }
+                    return;
+                }
+
+                // special reset no from server events
+                String pollsAction = intent.getExtras().getString(Constants.POLLS_ACTION);
+                if(pollsAction!=null){
+                    if(pollsAction.equalsIgnoreCase(EventsHelper.Event.POLLS_RESET.toString())){
+                        if(stream.livePoll==null){
+                            new App(getActivity()).getServerCalls().getCurrentPoll(stream.streamId, new GenericListener<Poll>() {
+                                @Override
+                                public void onData(Poll poll) {
+                                    stream.livePoll = poll;
+                                    uiHandle.livePollsList.resetPolls(poll);
+                                }
+                            });
+                            return;
+                        }
+                        uiHandle.livePollsList.resetPolls(stream.livePoll);
+                    }
+                }
+            }
+        };
+        getActivity().registerReceiver(pollEventsReciever, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
+        pollEventsReciever.onReceive(getActivity(), new Intent().putExtra(Constants.POLLS_ACTION, EventsHelper.Event.POLLS_RESET));
+
         super.onResume();
     }
 
     @Override
     public void onPause() {
-        TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.POLLS_CHANGED, this);
-        TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.POLLS_RESET, this);
+        getActivity().unregisterReceiver(pollEventsReciever);
         super.onPause();
     }
 }

@@ -11,9 +11,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 
-import com.allspark.letstoss.Config;
-import com.allspark.letstoss.MainActivity;
-import com.allspark.letstoss.R;
+import com.appsandlabs.telugubeats.R;
+import com.appsandlabs.telugubeats.activities.StreamActivity;
+import com.appsandlabs.telugubeats.config.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,7 +72,7 @@ public class NotificationUtils {
         if (titleText == null) {
             titleText = pContext.getResources().getString(R.string.app_name);
         }
-        Intent resultIntent = new Intent(pContext, MainActivity.class);
+        Intent resultIntent = new Intent(pContext, StreamActivity.class);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(pContext);
         notificationBuilder.setSmallIcon(getNotificationIcon());

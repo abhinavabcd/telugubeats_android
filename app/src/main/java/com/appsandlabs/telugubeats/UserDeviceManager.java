@@ -107,4 +107,8 @@ public class UserDeviceManager {
 	public SharedPreferences getPreferences() {
 		return preferences;
 	}
+
+	public void setPreference(String prefEncodedKey, String auth_key) {
+		preferences.edit().putString(prefEncodedKey, auth_key).commit();
+	}
 }

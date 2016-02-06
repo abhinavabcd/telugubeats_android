@@ -76,9 +76,21 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     public void setStream(Stream stream) {
         StreamingService.stream = stream;
         Intent intent = new Intent();
-        intent.setAction(Constants.STREAM_CHANGED_BROADCAST_ACTION);
+        intent.setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION);
         intent.putExtra(Constants.NEW_STREAM, new Gson().toJson(stream));
         sendBroadcast(intent);
+        downloadBitmapsInBg(stream);
+    }
+
+    private void downloadBitmapsInBg(final Stream stream) {
+        Thread bitmapDownloaderThread = new Thread(){
+            @Override
+            public void run() {
+                stream.loadBitmapSyncCall(app);
+                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STEAM_BITMAPS_CHANGED, true));
+            }
+        };
+        bitmapDownloaderThread.start();
     }
 
 
@@ -281,7 +293,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         fftArrayLeft = new float[leftFft.specSize()];
         fftArrayRight = new float[rightFft.specSize()];
 
-        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGED_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
         try {
             Bitstream bitstream = new Bitstream(inputStream);
             Decoder decoder = new Decoder();
@@ -453,12 +465,12 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private void resetNotificationBitmap() {
 
         if(stream.image!=null){
-
             simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, app.getUiUtils().getBitmapFromURL(stream.image));
             if (currentVersionSupportBigNotification) {
                 expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, app.getUiUtils().getBitmapFromURL(stream.image));
             }
         }
+
     }
 
     private void resetNotification() {
@@ -554,7 +566,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     private void stopStream(){
         isPlaying = false;
-        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGED_BROADCAST_ACTION).putExtra(Constants.STREAM_STOPPED, true));
+        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STOPPED, true));
         try {
             if(playingThread!=null)
                 playingThread.join();

@@ -1,6 +1,5 @@
 package com.appsandlabs.telugubeats.activities;
 
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,10 +15,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.IntentCompat;
 import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
@@ -37,36 +32,23 @@ import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
-import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener2;
-import com.appsandlabs.telugubeats.fragments.ChatAndEventsFragment;
-import com.appsandlabs.telugubeats.fragments.LiveTalkFragment;
-import com.appsandlabs.telugubeats.fragments.PollsFragment;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
-import com.appsandlabs.telugubeats.interfaces.AppEventListener;
+import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.models.Stream;
-import com.appsandlabs.telugubeats.recievers.EventDataReceiver;
+import com.appsandlabs.telugubeats.pageradapters.StreamInfoFragments;
 import com.appsandlabs.telugubeats.services.EventsListenerService;
 import com.appsandlabs.telugubeats.services.StreamingService;
 import com.google.gson.Gson;
 
-import java.util.Date;
-import java.util.concurrent.Callable;
-
-import bolts.Continuation;
-import bolts.Task;
-
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
-
-public class StreamActivity extends FragmentActivity {
+public class StreamActivity extends AppBaseFragmentActivity {
 
     StreamingService musicService;
     public ServiceConnection serviceConnection;
-    private AppFragments appFragments;
+    private StreamInfoFragments appFragments;
     private Intent eventReaderService;
-    private EventDataReceiver eventsBroadcastReceiver;
     private long lastEventsServiceStartTimeStamp = 0;
 
 
@@ -80,20 +62,21 @@ public class StreamActivity extends FragmentActivity {
     private float[] barHeightsLeft = new float[VisualizerConfig.nBars];
     private float[] barHeightsRight = new float[VisualizerConfig.nBars];
     private View visualizerView;
-    private boolean loaded;
     private App app;
     private String streamId;
-    private BroadcastReceiver receiver;
+    private BroadcastReceiver streamInfoChangesreceiver;
     private boolean isStreamPlaying = false;
     private boolean isFirstTimeStreamLoad = true;
+    private Gson gson = new Gson();
+    private Bitmap mBitmap;
 
 
     public static class UiHandle{
 
-        ViewPager pager;
+        View mainLayout;
         LinearLayout headerLayout;
 
-        TextView songAndTitle;
+        TextView streamAndTitle;
         TextView musicDirectors;
         TextView actors;
         TextView directors;
@@ -103,6 +86,7 @@ public class StreamActivity extends FragmentActivity {
         LinearLayout visualizer;
         Button playPauseButton;
         public LinearLayout currentSongHeader;
+        public ViewPager streamViewPager;
     }
 
 
@@ -111,11 +95,14 @@ public class StreamActivity extends FragmentActivity {
 
     public UiHandle initUiHandle(StreamActivity layout){
 
-        uiHandle.songAndTitle = (TextView)layout.findViewById(R.id.song_and_title);
+        uiHandle.mainLayout = layout.findViewById(R.id.layout);
+        uiHandle.streamAndTitle = (TextView)layout.findViewById(R.id.stream_title);
 
-        uiHandle.songAndTitle.setFocusable(true);
-        uiHandle.songAndTitle.setFocusableInTouchMode(true);
-        uiHandle.songAndTitle.setSelected(true);
+        uiHandle.streamViewPager = (ViewPager) layout.findViewById(R.id.stream_view_pager);
+
+        uiHandle.streamAndTitle.setFocusable(true);
+        uiHandle.streamAndTitle.setFocusableInTouchMode(true);
+        uiHandle.streamAndTitle.setSelected(true);
 
         uiHandle.musicDirectors = (TextView)layout.findViewById(R.id.music_directors);
         uiHandle.actors = (TextView)layout.findViewById(R.id.actors);
@@ -126,7 +113,6 @@ public class StreamActivity extends FragmentActivity {
         uiHandle.visualizer = (LinearLayout)layout.findViewById(R.id.visualizer);
         uiHandle.playPauseButton = (Button)layout.findViewById(R.id.play_pause_button);
 
-        uiHandle.pager = (ViewPager) findViewById(R.id.pager);
         uiHandle.headerLayout = (LinearLayout)findViewById(R.id.header);
         uiHandle.currentSongHeader = (LinearLayout)findViewById(R.id.current_song_header);
         //takes care of creating and adding event listeners from onPause and onResume
@@ -141,116 +127,89 @@ public class StreamActivity extends FragmentActivity {
 
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
-        initUiHandle(this);
-        addVisualizerView();
-
-
         app = new App(this);
+        setContentView(app.getUserDeviceManager().getLoadingView(this));
         if(getIntent().getExtras()==null)
             streamId = "telugu";
         else {
             streamId = getIntent().getExtras().getString(Constants.STREAM_ID);
         }
 
-
-
         if (!app.getUserDeviceManager().isLoggedInUser(this)) {
             goToLoginActivity();
             return;
         }
-
-
-
-        //clear old shit
-        isFirstTimeFlag = true;
-
-        VisualizerConfig.barHeight = (int) app.getUiUtils().dp2px(100);
-        hLinesPaint = new Paint();
-        hLinesPaint.setColor(getResources().getColor(android.R.color.transparent));
-        hLinesPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-        hLinesPaint.setStrokeWidth(3);
-
-        barPaint = new Paint();
-        barPaint.setStrokeWidth(1);
-        barPaint.setShader(new LinearGradient(0, 0, 0, VisualizerConfig.barHeight, app.getUiUtils().getColorFromResource(R.color.malachite), Color.argb(255, 200, 200, 200), Shader.TileMode.MIRROR));
-        barPaint.setStyle(Paint.Style.FILL);
-
-        registerStreamInfoChangeListener();
-
-
-        startStreamService(streamId);
-
-
     }
 
-    private void registerStreamInfoChangeListener() {
-        IntentFilter filter = new IntentFilter(Constants.STREAM_CHANGED_BROADCAST_ACTION);
 
-         receiver = new BroadcastReceiver() {
+
+    private void registerStreamChangesListener() {
+        IntentFilter filter = new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION);
+
+         streamInfoChangesreceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getExtras()!=null){
-                    if(intent.getExtras().getBoolean(Constants.STREAM_STARTED)){
-                        displayStreamInfo(StreamingService.stream);
-                        if(isFirstTimeStreamLoad){
-                            isFirstTimeStreamLoad = false;
-                            displayStreamTabs();
-                        }
-                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
-                    }
-                    else if(intent.getExtras().getBoolean(Constants.STREAM_STOPPED)){
-                        UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
-                    }
+                if(intent.getExtras()==null) return;
+                Stream stream = StreamingService.stream;
+                if(intent.getExtras().getBoolean(Constants.STREAM_STARTED)){
+                    if(isFirstTimeStreamLoad){
+                        isFirstTimeStreamLoad = false;
 
+                        setContentView(R.layout.activity_main);
+
+                        initUiHandle(StreamActivity.this);
+                        addVisualizerView();
+                        displayStreamTabs();
+                    }
+                    displayStreamMain(StreamingService.stream);
+                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+                    isStreamPlaying  = true;
+                }
+                else if(intent.getExtras().getBoolean(Constants.STREAM_STOPPED)){
+                    isStreamPlaying = false;
+                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+                }
+                else if(intent.getExtras().getBoolean(Constants.STEAM_BITMAPS_CHANGED)){
+                    if(stream.getBlurredImageBitmap()!=null){
+                        //main activity //TODO: dirty fix
+                        UiUtils.setBg(uiHandle.mainLayout, new BitmapDrawable(stream.getBlurredImageBitmap()));
+                    }
+                }
+                else if(intent.getExtras().getBoolean(Constants.STREAM_EVENTS_SERVICE_STOPPED)){
+                   //restart service ?
                 }
             }
         };
-        registerReceiver(receiver, filter);
+        registerReceiver(streamInfoChangesreceiver, filter);
     }
 
-    private void onStreamStarted(Stream stream) {
-
-    }
-
-    private void unregisterStreamChangeListener(){
-        unregisterReceiver(receiver);
-    }
 
 
     private void displayStreamTabs(){
-        appFragments = new AppFragments(getSupportFragmentManager());
-
+        appFragments = new StreamInfoFragments(getSupportFragmentManager(), StreamingService.stream);
+        uiHandle.streamViewPager.setAdapter(appFragments);
     }
-    private void displayStreamInfo(Stream newStream) {
-        initAndResetHeaderView();
-        notifySongChanged();
 
-
+    private void displayStreamMain(Stream newStream) {
+        resetHeaderView();
         //adds the fragments basically
-
-        uiHandle.pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        uiHandle.streamViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
             }
 
             @Override
             public void onPageSelected(int position) {
-                if (position == 1)//polls fragments
-                    app.getEventsHelper().broadcastEvent(EventsHelper.Event.POLLS_RESET, TeluguBeatsApp.currentPoll);
+                //nothing
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
+
             }
         });
     }
 
-    private void startStreamService(String streamId) {
-        Intent svc=new Intent(this, StreamingService.class);
-        svc.putExtra(Constants.STREAM_ID, streamId);
-        startService(svc);
-    }
 
     private void stopStreamService() {
         Intent svc=new Intent(this, StreamingService.class);
@@ -261,82 +220,68 @@ public class StreamActivity extends FragmentActivity {
 
 
 
-    private void resetCurrentSong() {
+    private void resetStreamInfo(Stream stream) {
 
 
-        uiHandle.songAndTitle.setText(UiText.capitalizeFully(TeluguBeatsApp.currentSong.title + " - " + TeluguBeatsApp.currentSong.album.name));
+        uiHandle.streamAndTitle.setText(UiText.capitalizeFully(stream.title + " - " + stream.getSubTitle()));
 
 
-        if (TeluguBeatsApp.currentSong.singers!=null && TeluguBeatsApp.currentSong.singers.size()>0) {
-            ((ViewGroup)uiHandle.singers.getParent()).setVisibility(View.VISIBLE);
-            uiHandle.singers.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.singers));
-        }
-        else{
-            ((ViewGroup)uiHandle.singers.getParent()).setVisibility(View.INVISIBLE);
-        }
+        if(stream.isSpecialSongStream) {
+            Song song = gson.fromJson(stream.additionalInfo, Song.class);
 
-
-        if (TeluguBeatsApp.currentSong.album.directors!=null && TeluguBeatsApp.currentSong.album.directors.size()>0) {
-            ((ViewGroup)uiHandle.directors.getParent()).setVisibility(View.VISIBLE);
-            uiHandle.directors.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.album.directors));
-        }
-        else{
-            ((ViewGroup)uiHandle.directors.getParent()).setVisibility(View.INVISIBLE);
-        }
-
-        if (TeluguBeatsApp.currentSong.album.actors!=null && TeluguBeatsApp.currentSong.album.actors.size()>0) {
-            ((ViewGroup)uiHandle.actors.getParent()).setVisibility(View.VISIBLE);
-            uiHandle.actors.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.album.actors));
-        }
-        else{
-            ((ViewGroup)uiHandle.actors.getParent()).setVisibility(View.INVISIBLE);
-        }
-
-        if (TeluguBeatsApp.currentSong.album.musicDirectors!=null && TeluguBeatsApp.currentSong.album.musicDirectors.size()>0) {
-            ((ViewGroup)uiHandle.musicDirectors.getParent()).setVisibility(View.VISIBLE);
-            uiHandle.musicDirectors.setText(TextUtils.join(", ", TeluguBeatsApp.currentSong.album.musicDirectors));
-        }
-        else{
-            ((ViewGroup)uiHandle.musicDirectors.getParent()).setVisibility(View.INVISIBLE);
-        }
-
-
-        if(TeluguBeatsApp.currentSong!=null) {
-            if(TeluguBeatsApp.blurredCurrentSongBg!=null){
-                //main activity //TODO: dirty fix
-                UiUtils.setBg(uiHandle.mainLayout, new BitmapDrawable(TeluguBeatsApp.blurredCurrentSongBg));
+            if (song.singers != null && song.singers.size() > 0) {
+                ((ViewGroup) uiHandle.singers.getParent()).setVisibility(View.VISIBLE);
+                uiHandle.singers.setText(TextUtils.join(", ", song.singers));
+            } else {
+                ((ViewGroup) uiHandle.singers.getParent()).setVisibility(View.INVISIBLE);
             }
-            else {
-                Task.callInBackground(new Callable<Bitmap>() {
-                    @Override
-                    public Bitmap call() throws Exception {
-                        Bitmap blurBitmap = TeluguBeatsApp.getUiUtils().fastblur(UiUtils.getBitmapFromURL(TeluguBeatsApp.currentSong.album.imageUrl), 5, 40);
-                        return blurBitmap;
-                    }
-                }).onSuccess(new Continuation<Bitmap, Object>() {
-                    @Override
-                    public Object then(Task<Bitmap> task) throws Exception {
-                        TeluguBeatsApp.blurredCurrentSongBg = task.getResult();
-                        TeluguBeatsApp.broadcastEvent(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, null);
-                        return null;
-                    }
-                }, Task.UI_THREAD_EXECUTOR);
 
-                blurredBgListener = new AppEventListener() {
-                    @Override
-                    public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-                        UiUtils.setBg(uiHandle.mainLayout, new BitmapDrawable(TeluguBeatsApp.blurredCurrentSongBg));
-                    }
-                };
 
-                TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
+            if (song.album.directors != null && song.album.directors.size() > 0) {
+                ((ViewGroup) uiHandle.directors.getParent()).setVisibility(View.VISIBLE);
+                uiHandle.directors.setText(TextUtils.join(", ", song.album.directors));
+            } else {
+                ((ViewGroup) uiHandle.directors.getParent()).setVisibility(View.INVISIBLE);
             }
+
+            if (song.album.actors != null && song.album.actors.size() > 0) {
+                ((ViewGroup) uiHandle.actors.getParent()).setVisibility(View.VISIBLE);
+                uiHandle.actors.setText(TextUtils.join(", ", song.album.actors));
+            } else {
+                ((ViewGroup) uiHandle.actors.getParent()).setVisibility(View.INVISIBLE);
+            }
+
+            if (song.album.musicDirectors != null && song.album.musicDirectors.size() > 0) {
+                ((ViewGroup) uiHandle.musicDirectors.getParent()).setVisibility(View.VISIBLE);
+                uiHandle.musicDirectors.setText(TextUtils.join(", ", song.album.musicDirectors));
+            } else {
+                ((ViewGroup) uiHandle.musicDirectors.getParent()).setVisibility(View.INVISIBLE);
+            }
+        }
+
+
+        if(stream.image!=null) {
+
         }
 //        readjustSlidingTabLayout(uiHandle.headerLayout);
 
     }
 
     private void addVisualizerView() {
+
+
+        VisualizerConfig.barHeight = (int) app.getUiUtils().dp2px(100);
+        hLinesPaint = new Paint();
+        hLinesPaint.setColor(getResources().getColor(android.R.color.transparent));
+        hLinesPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+        hLinesPaint.setStrokeWidth(3);
+
+        barPaint = new Paint();
+        barPaint.setStrokeWidth(1);
+        barPaint.setShader(new LinearGradient(0, 0, 0, VisualizerConfig.barHeight, app.getUiUtils().getColorFromResource(this, R.color.malachite), Color.argb(255, 200, 200, 200), Shader.TileMode.MIRROR));
+        barPaint.setStyle(Paint.Style.FILL);
+
+
         uiHandle.visualizer.addView(visualizerView = new View(this) {
 
 
@@ -451,18 +396,17 @@ public class StreamActivity extends FragmentActivity {
             @Override
             public void onClick(View v) {
                 // popup to write a name
-                TeluguBeatsApp.getUiUtils().promptInput("Enter name of user", 0, "", "dedicate", new GenericListener<String>() {
+                app.getUiUtils().promptInput(StreamActivity.this, "Enter name of user", 0, "", "dedicate", new GenericListener<String>() {
                     @Override
                     public void onData(String a) {
                         if (a.trim().isEmpty()) return;
 
 
-                        getServerCalls().sendDedicateEvent(a, new GenericListener<Boolean>() {
+                        app.getServerCalls().sendDedicateEvent(StreamingService.stream.streamId, a, new GenericListener<Boolean>() {
                             @Override
                             public void onData(Boolean s) {
                                 Intent sharingIntent = new Intent(Intent.ACTION_SEND);
                                 sharingIntent.setType("text/plain");
-                                sharingIntent.putExtra(Intent.EXTRA_SUBJECT, TeluguBeatsApp.currentUser.name + " has dedicated " + TeluguBeatsApp.currentSong.title + " song to you on TeluguBeats");
                                 String link = "https://play.google.com/store/apps/details?id=com.appsandlabs.telugubeats";
                                 sharingIntent.putExtra(Intent.EXTRA_TEXT, link);
                                 sharingIntent.setPackage("com.whatsapp");
@@ -478,86 +422,40 @@ public class StreamActivity extends FragmentActivity {
         });
     }
 
-    private void notifySongChanged() {
-        if(TeluguBeatsApp.onSongChanged!=null && TeluguBeatsApp.currentSong!=null){
-            TeluguBeatsApp.onSongChanged.sendMessage(TeluguBeatsApp.onSongChanged.obtainMessage());
-        }
-    }
 
 
-    @Override
-    protected void registerRecievers(){
-        IntentFilter filter = new IntentFilter(EventsListenerService.EVENT_INTENT_ACTION);
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        eventsBroadcastReceiver = new EventDataReceiver();
-        registerReceiver(eventsBroadcastReceiver, filter);
-
-    }
-
-    boolean isFirstTimeFlag = true;
-
-    @Override
-    public void startIntentServices(){
-        eventReaderService = new Intent(this, EventsListenerService.class);
-        if (!isFirstTimeFlag) {
-            eventReaderService.putExtra("restart", true);
-        }
-        startService(eventReaderService);
-        isFirstTimeFlag = false;
-        lastEventsServiceStartTimeStamp = new Date().getTime();
-    }
-
-    @Override
-    protected void stopIntentServices(){
-        stopService(eventReaderService);
-    }
 
 
-    private boolean isEventsServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if ("com.appsandlabs.telugubeats.services.EventsListenerService".equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        logd("main activity resumed");
-        renewEventsRunnable.run();
-//        renewEventsHandler.postDelayed(renewEventsRunnable, 7 * 60 * 1000);//after 7 minutes
-
-        if(loaded){
-            initAndResetHeaderView();
+        if(!isFirstTimeStreamLoad){
+            resetHeaderView();
         }
+        registerStreamChangesListener();
 
 
-        Intent svc=new Intent(this, StreamingService.class);
-        startService(svc);
-
-        //connect to background service
-//        bindService(svc, serviceConnection = new ServiceConnection() {
-//            @Override
-//            public void onServiceConnected(ComponentName name, IBinder service) {
-//                StreamingService.MusicServiceBinder binder = (StreamingService.MusicServiceBinder) service;
-//                musicService = binder.getService();
-//                //start downloading and playing stream
-//                mBound = true;
-//            }
-//
-//            @Override
-//            public void onServiceDisconnected(ComponentName name) {
-//                mBound = false;
-//            }
-//        }, Context.BIND_AUTO_CREATE);
-
+        startService(new Intent(this, StreamingService.class).putExtra(Constants.STREAM_ID, streamId));
+        startService(new Intent(this, EventsListenerService.class));
 
     }
 
-    private void initAndResetHeaderView() {
+    @Override
+    protected void onPause() {
+        if(!isFirstTimeStreamLoad) {
+            TeluguBeatsApp.onFFTData = new GenericListener2<>();
+        }
+        unregisterReceiver(streamInfoChangesreceiver);
+
+
+        startService(new Intent(this, EventsListenerService.class).putExtra(Constants.STOP_READING_EVENTS, true));
+
+        super.onPause();
+    }
+
+
+    private void resetHeaderView() {
         TeluguBeatsApp.onFFTData = new GenericListener2<float[], float[]>(){
             @Override
             public void onData(float[] l , float[] r) {
@@ -572,7 +470,7 @@ public class StreamActivity extends FragmentActivity {
             }
         };
 
-        resetCurrentSong();
+        resetStreamInfo(StreamingService.stream);
 //        if(StreamingService.isNotPlaying){
 //            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
 //        }
@@ -582,45 +480,29 @@ public class StreamActivity extends FragmentActivity {
         uiHandle.playPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(app.getUserDeviceManager().isRapidReClick(100)){
+                if (app.getUserDeviceManager().isRapidReClick(100)) {
                     return;
                 }
-                if(isStreamPlaying){
+                if (isStreamPlaying) {
                     UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
-                    Intent stopStreamIntent = new Intent()
+                    Intent stopStreamIntent = new Intent(StreamActivity.this, StreamingService.class);
+                    stopStreamIntent.setAction(StreamingService.NOTIFY_PAUSE);
+                    startService(stopStreamIntent);
 
-                }
-                else {
+                } else {
                     UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+                    Intent startStreamIntent = new Intent(StreamActivity.this, StreamingService.class);
+                    startStreamIntent.setAction(StreamingService.NOTIFY_PLAY);
+                    startService(startStreamIntent);
                 }
             }
         });
 
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener = new AppEventListener() {
-            @Override
-            public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-                resetCurrentSong();
-            }
-        });
     }
 
-    @Override
-    protected void onPause() {
-        if(loaded) {
-            TeluguBeatsApp.onFFTData = new GenericListener<>();
-            TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.BLURRED_BG_AVAILABLE, blurredBgListener);
-            TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.SONG_CHANGED, songChangeListener);
-        }
-        super.onPause();
-    }
 
     @Override
     protected void onDestroy() {
-        // unpause it from notification or something else
-
-        TeluguBeatsApp.onActivityDestroyed(this);
-        notifySongChanged();
-        StreamingService.keepSilenced = true;
         super.onDestroy();
     }
 
@@ -647,67 +529,7 @@ public class StreamActivity extends FragmentActivity {
     }
 
 
-    public class AppFragments extends FragmentPagerAdapter {
 
-
-        public AppFragments(FragmentManager fm) {
-            super(fm);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            if (position == 0) {
-                //TODO: is just a list fragment with textinput to post
-                ChatAndEventsFragment chatFragment = new ChatAndEventsFragment();
-                return chatFragment;
-            }
-            else if (position==1) {
-                PollsFragment pollsFragment = new PollsFragment();
-                return pollsFragment;
-            }
-
-            else if (position==2) {
-                LiveTalkFragment liveTalkFragment = new LiveTalkFragment();
-                return liveTalkFragment;
-            }
-            return null;
-        }
-
-        @Override
-        public int getCount() {
-            // Show 3 total pages.
-            return 3;
-        }
-
-//        public int getPageIcon(int position) {
-//            if (position == 0) {
-//                return R.drawable.ic_icon_tab_home;
-//            } else if (position == 1) {
-//                return R.drawable.ic_icon_tab_search;
-//            } else if (position == 2) {
-//                return R.drawable.ic_icon_tab_activity;
-//            } else {
-//                return R.drawable.ic_icon_tab_profile;
-//            }
-//        }
-
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            switch(position){
-                case 0:
-                    return "Talk";
-                case 1:
-                    return "Polls";
-                case 2:
-                    return "Talk on Radio";
-
-            }
-            return null;
-        }
-    }
 
     private void goToLoginActivity() {
         Intent i = new Intent(StreamActivity.this, LoginActivity.class);

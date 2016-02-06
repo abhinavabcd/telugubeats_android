@@ -8,7 +8,7 @@ import java.util.List;
 public class EventsHelper {
 
     public enum Event {
-        NONE, POLLS_CHANGED, BLURRED_BG_AVAILABLE, GENERIC_FEED, SONG_CHANGED, POLLS_RESET;
+        NONE, POLLS_CHANGED, BLURRED_BG_AVAILABLE, GENERIC_FEED, SONG_CHANGED, POLLS_RESET, NEW_CHAT;
 
         public Object getValue() {
             return value;

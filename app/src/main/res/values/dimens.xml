@@ -11,5 +11,6 @@
 
 
     <dimen name="tabs_height">48dp</dimen>
+    <dimen name="header_height">350dp</dimen>
 
 </resources>

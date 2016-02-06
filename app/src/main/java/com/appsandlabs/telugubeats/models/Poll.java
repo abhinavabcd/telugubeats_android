@@ -1,6 +1,5 @@
 package com.appsandlabs.telugubeats.models;
 
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
 import com.google.gson.annotations.SerializedName;
 
@@ -24,9 +23,9 @@ public class Poll extends  BaseModel{
         return max;
     }
 
-    public static PollItem getChangedPoll(PollsChanged data){
+    public static PollItem getChangedPoll(Poll poll , PollsChanged data){
         for(PollsChanged.PollChange change : data.pollChanges) {
-            for (PollItem pollItem : TeluguBeatsApp.currentPoll.pollItems) {
+            for (PollItem pollItem : poll.pollItems) {
                 if (change.pollId.equals(pollItem.id.toString())) {
                     return pollItem;
                 }
@@ -43,9 +42,9 @@ public class Poll extends  BaseModel{
         return "unknown";
     }
 
-    public static boolean isModifiedPoll(PollsChanged data){
+    public static boolean isModifiedPoll(Poll poll , PollsChanged data){
         for(PollsChanged.PollChange change : data.pollChanges) {
-            for (PollItem pollItem : TeluguBeatsApp.currentPoll.pollItems) {
+            for (PollItem pollItem : poll.pollItems) {
                 if (change.pollId.equals(pollItem.id.toString())) {
                     if(change.count<0)
                         return true;

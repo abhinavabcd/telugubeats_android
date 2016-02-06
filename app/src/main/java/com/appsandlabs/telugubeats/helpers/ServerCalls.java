@@ -7,7 +7,7 @@ import android.util.Log;
 import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
-import com.appsandlabs.telugubeats.models.Event;
+import com.appsandlabs.telugubeats.models.StreamEvent;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.PollItem;
 import com.appsandlabs.telugubeats.models.Stream;
@@ -51,7 +51,7 @@ public class ServerCalls {
         params.put("installation_key", installationKey);
         params.put("gcm_token", registrationId);
 
-        client.post(url, params , new AsyncHttpResponseHandler() {
+        client.post(url, params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int arg0, Header[] arg1, byte[] responseBytes) {
                 String response = new String(responseBytes);
@@ -67,7 +67,7 @@ public class ServerCalls {
 	}
 
     public void getStreamInfo(String streamId, final GenericListener<Stream> listener) {
-        client.get(SERVER_ADDR + "/get_stream_info/" + streamId , new AsyncHttpResponseHandler() {
+        client.get(SERVER_ADDR + "/get_stream_info/" + streamId, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String temp = new String(responseBody);
@@ -83,8 +83,8 @@ public class ServerCalls {
         });
     }
 
-    public void getCurrentPollInfo(String streamId ,final GenericListener<Poll> listener ){
-        client.get(SERVER_ADDR + "/get_poll_info/" + streamId , new AsyncHttpResponseHandler() {
+    public void getCurrentPoll(String streamId ,final GenericListener<Poll> listener ){
+        client.get(SERVER_ADDR + "/get_current_poll/" + streamId , new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String temp = new String(responseBody);
@@ -100,13 +100,14 @@ public class ServerCalls {
         });
     }
 
-    public void getLastEvents(String streamId, String fromTimeStampInMillis , final GenericListener<List<Event>> listener){
+    public void getLastEvents(String streamId, long fromTimeStampInMillis , final GenericListener<List<StreamEvent>> listener){
         client.post(SERVER_ADDR + "/get_last_events/" + streamId + "/" + fromTimeStampInMillis, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String temp = new String(responseBody);
-                List<Event> events = gson.fromJson(temp, new TypeToken<List<Event>>(){}.getType());
-                listener.onData(events);
+                List<StreamEvent> streamEvents = gson.fromJson(temp, new TypeToken<List<StreamEvent>>() {
+                }.getType());
+                listener.onData(streamEvents);
             }
 
             @Override
@@ -213,6 +214,27 @@ public class ServerCalls {
         if(eventsListenerTask!=null)
             eventsListenerTask.cancel(true);
 
+    }
+
+    public void getPollById(String streamId, String pollId, final GenericListener<Poll> listener) {
+        String authKey = app.getUserDeviceManager().getAuthKey();
+        if(authKey==null){
+            //TODO: login dialog
+            return;
+        }
+
+        client.get(SERVER_ADDR + "/get_poll_by_id/" + streamId + "/" +pollId, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Poll poll = gson.fromJson(new String(responseBody), Poll.class);
+                listener.onData(poll);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                listener.onData(null);
+            }
+        });
     }
 }
 

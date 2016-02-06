@@ -1,6 +1,6 @@
 package com.appsandlabs.telugubeats;
 
-import com.appsandlabs.telugubeats.models.Event;
+import com.appsandlabs.telugubeats.models.StreamEvent;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.Song;
 import com.appsandlabs.telugubeats.response_models.PollsChanged;
@@ -28,21 +28,21 @@ public enum UiText {
     }
 
 
-    public String getFeedString(Event event) {
+    public static String getFeedString(StreamEvent streamEvent) {
         String feed= null;
-        switch (event.eventId) {
+        switch (streamEvent.eventId) {
 
             case POLLS_CHANGED:
-                PollsChanged pollsChanged = new Gson().fromJson(event.payload, PollsChanged.class);
+                PollsChanged pollsChanged = new Gson().fromJson(streamEvent.data, PollsChanged.class);
                 feed = "voted up for \"" + Poll.getChangedPollSongTitle(pollsChanged)+"\"";
                 //TODO: indicate modified vote here
                 break;
             case DEDICATE:
-                feed ="dedicated this song to \'" + event.payload+"\'";
+                feed ="dedicated this song to \'" + streamEvent.data+"\'";
                 break;
 
             case CHAT_MESSAGE:
-                feed =  event.payload;
+                feed =  streamEvent.data;
                 break;
         }
         return feed;

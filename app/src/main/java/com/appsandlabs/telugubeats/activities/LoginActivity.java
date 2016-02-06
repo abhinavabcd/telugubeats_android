@@ -5,16 +5,15 @@ import android.os.Bundle;
 import android.support.v4.content.IntentCompat;
 import android.view.View;
 
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.UserDeviceManager;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.loginutils.FacebookLoginHelper;
 import com.appsandlabs.telugubeats.loginutils.GoogleLoginHelper;
 import com.appsandlabs.telugubeats.models.User;
 
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
 
 /**
  * Created by abhinav on 10/4/15.
@@ -23,12 +22,13 @@ public class LoginActivity extends AppBaseFragmentActivity {
 
     private View facebookButton;
     private View googlePlusButton;
+    private App app;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if(UserDeviceManager.isLoggedInUser(this)){
+         app = new App(this);
+        if(app.getUserDeviceManager().isLoggedInUser(this)){
            goToMainActivity();
             return;
         }
@@ -39,13 +39,13 @@ public class LoginActivity extends AppBaseFragmentActivity {
         facebookButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new FacebookLoginHelper().doLogin(new GenericListener<User>(){
+                new FacebookLoginHelper(app).doLogin(LoginActivity.this, new GenericListener<User>(){
                     @Override
                     public void onData(User user) {
-                        getServerCalls().registerUser(user, new GenericListener<User>() {
+                        app.getServerCalls().registerUser(user, new GenericListener<User>() {
                             @Override
                             public void onData(User user) {
-                                TeluguBeatsApp.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
+                                app.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
                                 TeluguBeatsApp.currentUser = user;
                                 goToMainActivity();
                             }
@@ -60,13 +60,13 @@ public class LoginActivity extends AppBaseFragmentActivity {
         googlePlusButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new GoogleLoginHelper().doLogin(new GenericListener<User>(){
+                new GoogleLoginHelper(app).doLogin(LoginActivity.this, new GenericListener<User>(){
                     @Override
                     public void onData(User user) {
-                        getServerCalls().registerUser(user, new GenericListener<User>() {
+                        app.getServerCalls().registerUser(user, new GenericListener<User>() {
                             @Override
                             public void onData(User user) {
-                                TeluguBeatsApp.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
+                                app.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
                                 TeluguBeatsApp.currentUser = user;
                                 goToMainActivity();
                             }

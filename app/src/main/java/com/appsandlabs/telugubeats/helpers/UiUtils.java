@@ -216,7 +216,7 @@ public class UiUtils {
 
 	@SuppressLint("NewApi")
 	public void setBg(final View view, String url) {
-		getRequestCreatorTask(url, false).onSuccess(new Continuation<RequestCreator, Void>() {
+		getRequestCreatorTask(context, url, false).onSuccess(new Continuation<RequestCreator, Void>() {
 			@Override
 			public Void then(Task<RequestCreator> task) throws Exception {
 				view.setBackground(new BitmapDrawable(view.getContext().getResources(), task.getResult().get()));
@@ -306,7 +306,7 @@ public class UiUtils {
 
 
 
-	public Task<RequestCreator> getRequestCreatorTask(final String assetPath, final boolean downloadToAssets) {
+	public static Task<RequestCreator> getRequestCreatorTask(final Context context , final String assetPath, final boolean downloadToAssets) {
 		return Task.call(new Callable<RequestCreator>() {
 			@Override
 			public RequestCreator call() throws Exception {
@@ -364,7 +364,7 @@ public class UiUtils {
 		});
 	}
 
-	public int generateRandomColor(int mix) {
+	public static int generateRandomColor(int mix) {
 		Random random = new Random();
 		int red = random.nextInt(256);
 		int green = random.nextInt(256);
@@ -448,17 +448,17 @@ public class UiUtils {
 		return true;
 	}
 
-	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
+	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, null);
 	}
 
 
-	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
+	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, Transformation t) {
 		return loadImageIntoView(ctx, imgView, assetPath, downloadToAssets, -1, -1, t);
 	}
 
-	public  Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, final int width, final int height, final Transformation transformation) {
-		return getRequestCreatorTask(assetPath, downloadToAssets).onSuccess(new Continuation<RequestCreator, RequestCreator>() {
+	public static Task<RequestCreator> loadImageIntoView(Context ctx, final ImageView imgView, final String assetPath, final boolean downloadToAssets, final int width, final int height, final Transformation transformation) {
+		return getRequestCreatorTask(ctx , assetPath, downloadToAssets).onSuccess(new Continuation<RequestCreator, RequestCreator>() {
 
 			@Override
 			public RequestCreator then(Task<RequestCreator> task) throws Exception {
@@ -684,7 +684,7 @@ public class UiUtils {
 		linearLayout.addView(newLL);
 	}
 
-	public  int getColorFromResource(int id) {
+	public static int getColorFromResource(Context context , int id) {
 		return context.getResources().getColor(id);
 	}
 

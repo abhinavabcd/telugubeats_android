@@ -8,9 +8,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.UiText;
-import com.appsandlabs.telugubeats.UserDeviceManager;
+import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener4;
@@ -45,7 +45,8 @@ import java.util.Locale;
  */
 public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFailedListener {
     private static final int RC_SIGN_USER_PROFILE = 101;
-	private GoogleApiClient mGoogleApiClient;
+    private final App app;
+    private GoogleApiClient mGoogleApiClient;
 	/* Is there a ConnectionResult resolution in progress? */
 	private boolean mIsResolving = false;
 	private static final int RC_SIGN_IN = 0;
@@ -55,9 +56,11 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
 	private GenericListener<User> listener;
 	protected static final String ACTIVITIES_LOGIN = "http://schemas.google.com/AddActivity";
+    private AppBaseFragmentActivity activity;
 
-	public GoogleLoginHelper() {
-        mGoogleApiClient = new GoogleApiClient.Builder(TeluguBeatsApp.getCurrentActivity())
+    public GoogleLoginHelper(App app) {
+        this.app = app;
+        mGoogleApiClient = new GoogleApiClient.Builder(app.context)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(Plus.API)
@@ -66,12 +69,13 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
                 .build();
 	}
 	
-	public void doLogin(GenericListener<User> loginListener){
+	public void doLogin(AppBaseFragmentActivity activity, GenericListener<User> loginListener){
 		this.listener = loginListener;
 
 		mShouldResolve = true;
+        this.activity = activity;
 
-		TeluguBeatsApp.getCurrentActivity().setActivityResultListener(new GenericListener4<Integer, Integer, Intent, Void>() {
+		activity.setActivityResultListener(new GenericListener4<Integer, Integer, Intent, Void>() {
             public void onData(Integer requestCode, Integer responseCode, Intent intent) {
                 onActivityResult(requestCode, responseCode, intent);
             }
@@ -96,12 +100,12 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
 	private void getUserProfileInformation(){
     	final User user = new User();
-        user.device_id = UserDeviceManager.getDeviceId();
+        user.device_id = app.getUserDeviceManager().getDeviceId();
         Person person = Plus.PeopleApi.getCurrentPerson(mGoogleApiClient);
         Plus.PeopleApi.load(mGoogleApiClient, "me").setResultCallback(new ResultCallback<People.LoadPeopleResult>() {
             @Override
             public void onResult(final People.LoadPeopleResult loadPeopleResult) {
-                TeluguBeatsApp.getUiUtils().addUiBlock("Fetching Profile.");
+                app.getUiUtils().addUiBlock("Fetching Profile.");
                 if (loadPeopleResult.getStatus().getStatusCode() == CommonStatusCodes.SUCCESS) {
                     PersonBuffer personBuffer = loadPeopleResult.getPersonBuffer();
                     try {
@@ -143,7 +147,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
                 } else {
                     Log.e("GPLUS_HELPER", "Error requesting people data: " + loadPeopleResult.getStatus());
                 }
-                TeluguBeatsApp.getUiUtils().removeUiBlock();
+                app.getUiUtils().removeUiBlock();
             }
         });
 	}
@@ -154,7 +158,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
             @Override
             public void run() {
-                TeluguBeatsApp.getUiUtils().addUiBlock(UiText.CONNECTING.getValue());
+                app.getUiUtils().addUiBlock(UiText.CONNECTING.getValue());
                 AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>() {
                     @Override
                     protected String doInBackground(Void... params) {
@@ -163,7 +167,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
                             token = GoogleAuthUtil
                                     .getToken(
-                                            TeluguBeatsApp.getContext().getApplicationContext(),
+                                            app.context.getApplicationContext(),
                                             user.email_id,
                                             "oauth2:"//+"server"
                                                     //+":client_id:" + Config.GOOGLE_PLUS_SERVER_CLIENT_ID
@@ -173,7 +177,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
                         } catch (UserRecoverableAuthException e) {
                             // Recover
 
-                            TeluguBeatsApp.getCurrentActivity().startActivityForResult(e.getIntent(), GoogleLoginHelper.RC_SIGN_USER_PROFILE);
+                            activity.startActivityForResult(e.getIntent(), GoogleLoginHelper.RC_SIGN_USER_PROFILE);
                             e.printStackTrace();
                             token = null;
                         } catch (GoogleAuthException authEx) {
@@ -190,7 +194,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
                     @Override
                     protected void onPostExecute(String token) {
-                        TeluguBeatsApp.getUiUtils().removeUiBlock();
+                        app.getUiUtils().removeUiBlock();
                         if (token != null) {
                             user.google_plus_token = token;
                             listener.onData(user);
@@ -206,7 +210,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
 
 
 	public void getAllFriendsList(String token , final User user){
-		TeluguBeatsApp.getUiUtils().addUiBlock(UiText.CHECKING_FOR_FRIENDS.getValue());
+		app.getUiUtils().addUiBlock(UiText.CHECKING_FOR_FRIENDS.getValue());
         Plus.PeopleApi.loadVisible(mGoogleApiClient, token).setResultCallback(new ResultCallback<People.LoadPeopleResult>() {
             @Override
             public void onResult(final People.LoadPeopleResult loadPeopleResult) {
@@ -228,7 +232,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
                 } else {
                     Log.e("GOOGLE LOGIN HELPER", "Error requesting people data: " + loadPeopleResult.getStatus());
                 }
-                TeluguBeatsApp.getUiUtils().removeUiBlock();
+                app.getUiUtils().removeUiBlock();
             }
         });
 
@@ -252,7 +256,7 @@ public class GoogleLoginHelper implements ConnectionCallbacks, OnConnectionFaile
             if (connectionResult.hasResolution()) {
                 try {
                     mIsResolving = true;
-                    connectionResult.startResolutionForResult(TeluguBeatsApp.getCurrentActivity(), RC_SIGN_IN);
+                    connectionResult.startResolutionForResult(activity, RC_SIGN_IN);
                 } catch (IntentSender.SendIntentException e) {
                     Log.e(Config.ERR_LOG_TAG, "Could not resolve ConnectionResult.", e);
                     mIsResolving = false;

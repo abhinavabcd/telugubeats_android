@@ -1,11 +1,12 @@
 package com.appsandlabs.telugubeats.fragments;
 
-import android.graphics.Bitmap;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -13,15 +14,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
+import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
-import com.appsandlabs.telugubeats.helpers.UiUtils;
-import com.appsandlabs.telugubeats.interfaces.AppEventListener;
+import com.appsandlabs.telugubeats.helpers.Constants;
+import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.models.StreamEvent;
+import com.appsandlabs.telugubeats.services.StreamingService;
 
-import static com.appsandlabs.telugubeats.TeluguBeatsApp.getServerCalls;
+import java.util.List;
 
 /**
  * Created by abhinav on 10/2/15.
@@ -30,9 +32,8 @@ public class ChatAndEventsFragment extends Fragment {
 
 
     private ViewGroup layout;
-    private AppEventListener feedChangeListener;
-    private AbsListViewDelegate mAbsListViewDelegate = new AbsListViewDelegate();
-
+    private App app;
+    private BroadcastReceiver eventsReceiver;
 
     public static class UiHandle{
 
@@ -51,26 +52,19 @@ public class ChatAndEventsFragment extends Fragment {
         return uiHandle;
     }
 
-
-    Bitmap visualizerBitmap = null;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
-
+        app = new App(this.getActivity());
         layout = (ViewGroup) inflater.inflate(R.layout.events_fragment_layout, null);
 
         uiHandle = initUiHandle(layout);
-
         uiHandle.telugubeatsEvents.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_NORMAL);
-        uiHandle.telugubeatsEvents.setAdapter(new FeedViewAdapter(getActivity(), 0, TeluguBeatsApp.getLastFewFeedEvents()));
-
-
 
         uiHandle.saySomethingText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
+                    app.getUiUtils().scrollToBottom(uiHandle.telugubeatsEvents);
                 }
             }
         });
@@ -78,55 +72,66 @@ public class ChatAndEventsFragment extends Fragment {
         uiHandle.sayButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Stream stream=StreamingService.stream;
+                if(stream==null) return;
+
                 String text = uiHandle.saySomethingText.getText().toString();
                 uiHandle.saySomethingText.setText("");
-                getServerCalls().sendChat(text, new GenericListener<Boolean>());
+                app.getServerCalls().sendChat(stream.streamId, text, new GenericListener<Boolean>() {
+                    @Override
+                    public void onData(Boolean s) {
+
+                    }
+                });
                 uiHandle.saySomethingText.requestFocus();
-                UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
+                app.getUiUtils().scrollToBottom(uiHandle.telugubeatsEvents);
             }
         });
 
         uiHandle.saySomethingText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
+                app.getUiUtils().scrollToBottom(uiHandle.telugubeatsEvents);
 
             }
         });
-        UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
+        app.getUiUtils().scrollToBottom(uiHandle.telugubeatsEvents);
         return layout;
     }
 
 
+    private void renderEvent(StreamEvent event) {
+
+    }
 
 
     @Override
     public void onResume() {
-
-        TeluguBeatsApp.addListener(TeluguBeatsApp.NotifierEvent.GENERIC_FEED, feedChangeListener = new AppEventListener() {
+        eventsReceiver = new BroadcastReceiver() {
             @Override
-            public void onEvent(TeluguBeatsApp.NotifierEvent type, Object data) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        UiUtils.scrollToBottom(uiHandle.telugubeatsEvents);
-                    }
-                });
+            public void onReceive(Context context, Intent intent) {
+                Bundle extras = intent.getExtras();
+                String eventId = extras.getString(Constants.NEW_EVENT_BROADCAST_ACTION, null);
+                if(eventId==null) return;
+                StreamEvent event = StreamingService.stream.getEventById(eventId);
+                //render all events row by row
+                renderEvent(event);
+            }
+        };
+
+        app.getServerCalls().getLastEvents(StreamingService.stream.streamId, 0, new GenericListener<List<StreamEvent>>() {
+            @Override
+            public void onData(List<StreamEvent> s) {
+                getActivity().registerReceiver(eventsReceiver, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
+                uiHandle.telugubeatsEvents.setAdapter(new FeedViewAdapter(getActivity(), 0, s));
             }
         });
-
         super.onResume();
-    }
-
-    private void restartEventListenerService() {
-        ((StreamActivity)getActivity()).startIntentServices();
     }
 
     @Override
     public void onPause() {
-        TeluguBeatsApp.removeListener(TeluguBeatsApp.NotifierEvent.GENERIC_FEED, feedChangeListener);
-        //TODO : remove event listener
-
+        getActivity().unregisterReceiver(eventsReceiver);
         super.onPause();
     }
 }

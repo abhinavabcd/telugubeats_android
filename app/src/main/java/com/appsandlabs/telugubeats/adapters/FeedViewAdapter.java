@@ -6,42 +6,25 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
+import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.UiText;
-import com.appsandlabs.telugubeats.models.Event;
+import com.appsandlabs.telugubeats.models.StreamEvent;
+import com.appsandlabs.telugubeats.viewholders.ChatViewHolder;
+import com.appsandlabs.telugubeats.viewholders.GenericFeedTextHolder;
 
 import java.util.List;
 
 /**
  * Created by abhinav on 10/15/15.
  */
-public class FeedViewAdapter extends ArrayAdapter<Event> {
-    public FeedViewAdapter(Context context, int resource, List<Event> objects) {
+public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
+    public FeedViewAdapter(Context context, int resource, List<StreamEvent> objects) {
         super(context, resource, objects);
     }
 
-    public static class UiHandle{
-
-        ImageView image;
-        TextView userName;
-        TextView userMessage;
-
-    }
-
-
-    public UiHandle initUiHandle(ViewGroup layout){
-
-        UiHandle uiHandle = new UiHandle();
-        uiHandle.image = (ImageView)layout.findViewById(R.id.image);
-        uiHandle.userName = (TextView)layout.findViewById(R.id.user_name);
-        uiHandle.userMessage = (TextView)layout.findViewById(R.id.user_message);
-
-        return uiHandle;
-    }
 
 
     @Override
@@ -51,35 +34,63 @@ public class FeedViewAdapter extends ArrayAdapter<Event> {
 
     @Override
     public int getItemViewType(int position) {
-        return getItem(position).eventId== Event.EventId.CHAT_MESSAGE?0:1;
+        return StreamEvent.EventId.CHAT_MESSAGE.ordinal();
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        Event evt = getItem(position);
-        UiHandle uiHandle = null;
+        StreamEvent evt = getItem(position);
 
+        switch (evt.eventId){
+            case CHAT_MESSAGE:
+                return renderChatMessage(evt, convertView, parent);
+            case DEDICATE:
+            case POLLS_CHANGED:
+                renderNormalEvent(evt, convertView, parent);
+                break;
+        }
+        return null;
+    }
+
+    private void renderNormalEvent(StreamEvent evt, View convertView, ViewGroup parent) {
+        GenericFeedTextHolder feedUiHandle = null;
         if(convertView==null){
             LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             LinearLayout feedView = (LinearLayout) inflater.inflate(R.layout.feed_view,parent , false);
-            uiHandle =initUiHandle(feedView);
-            feedView.setTag(uiHandle);
+            feedUiHandle = GenericFeedTextHolder.initUiHandle(feedView);
+            feedView.setTag(feedUiHandle);
             convertView = feedView;
         }
-        uiHandle = (UiHandle) convertView.getTag();
+        feedUiHandle = (GenericFeedTextHolder) convertView.getTag();
 //        Picasso.with(getContext()).load(uiHandle.image
-        if(evt.eventId == Event.EventId.CHAT_MESSAGE) {
+        if(evt.eventId == StreamEvent.EventId.CHAT_MESSAGE) {
             if (evt.fromUser != null)
-                uiHandle.userName.setText(evt.fromUser.name);
-            uiHandle.userMessage.setText(UiText.getFeedString(evt));
+                feedUiHandle.userName.setText(evt.fromUser.name);
+            feedUiHandle.userMessage.setText(UiText.getFeedString(evt));
         }
         else{
             if (evt.fromUser != null)
-                uiHandle.userName.setText(evt.fromUser.name + " " + UiText.getFeedString(evt));
-            uiHandle.userName.setGravity(Gravity.CENTER_HORIZONTAL);
-            uiHandle.userMessage.setVisibility(View.GONE);
+                feedUiHandle.userName.setText(evt.fromUser.name + " " + UiText.getFeedString(evt));
+            feedUiHandle.userName.setGravity(Gravity.CENTER_HORIZONTAL);
+            feedUiHandle.userMessage.setVisibility(View.GONE);
         }
 
+    }
+
+    private View renderChatMessage(StreamEvent evt, View convertView , ViewGroup parent) {
+        ChatViewHolder viewHolder = null;
+        if(convertView==null){
+            LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LinearLayout feedView = (LinearLayout) inflater.inflate(R.layout.list_item_chat_message,parent , false);
+            feedView.setTag(ChatViewHolder.createViewHolder(feedView));
+            convertView = feedView;
+        }
+
+        viewHolder = (ChatViewHolder) convertView.getTag();
+        viewHolder.setAlignment(evt.fromUser== TeluguBeatsApp.currentUser);
+        viewHolder.txtMessage.setText(evt.data);
+        viewHolder.txtInfo.setText(evt.updatedAt.toString());
         return convertView;
     }
+
 }

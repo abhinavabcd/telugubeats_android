@@ -4,7 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
+import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener4;
 import com.appsandlabs.telugubeats.models.User;
@@ -32,14 +33,18 @@ import bolts.Continuation;
 import bolts.Task;
 
 public class FacebookLoginHelper {
-	public FacebookLoginHelper() {
-		FacebookSdk.sdkInitialize(TeluguBeatsApp.getContext());
+
+	private final App app;
+
+	public FacebookLoginHelper(App app) {
+		this.app = app;
+		FacebookSdk.sdkInitialize(app.context);
 	}
 	
 
-	public void doLogin(final GenericListener<User> afterLoginListener){
+	public void doLogin(AppBaseFragmentActivity activity, final GenericListener<User> afterLoginListener){
 		final CallbackManager callbackManager = CallbackManager.Factory.create();
-		TeluguBeatsApp.getCurrentActivity().setActivityResultListener(new GenericListener4<Integer, Integer, Intent, Void>() {
+		activity.setActivityResultListener(new GenericListener4<Integer, Integer, Intent, Void>() {
 			@Override
 			public void onData(Integer requestCode, Integer resultCode, Intent data) {
 				if (callbackManager != null)
@@ -68,14 +73,14 @@ public class FacebookLoginHelper {
 					}
 				});
 
-		LoginManager.getInstance().logInWithReadPermissions(TeluguBeatsApp.getCurrentActivity(), Arrays.asList("user_about_me", "email", "user_friends"));//"user_photos", , "user_birthday","user_location"));
+		LoginManager.getInstance().logInWithReadPermissions(activity, Arrays.asList("user_about_me", "email", "user_friends"));//"user_photos", , "user_birthday","user_location"));
 	}
 
 
 	protected void getTokenAndUserInfo(
 			final GenericListener<User> afterLoginListener
 			) {
-		TeluguBeatsApp.getUiUtils().addUiBlock("Fetching Facebook profile");
+		app.getUiUtils().addUiBlock("Fetching Facebook profile");
 		Bundle params = new Bundle();
         params.putString("fields", "name,first_name,last_name,middle_name,email,address,picture,location,gender,verified,friends");
 		AccessToken accessToken = AccessToken.getCurrentAccessToken();
@@ -84,7 +89,7 @@ public class FacebookLoginHelper {
 			public void onCompleted(GraphResponse response) {
 				if (response.getError() != null) {
 					Toast.makeText(
-							TeluguBeatsApp.getContext(),
+							app.context,
 							"There was a problem fetching fromUser data",
 							Toast.LENGTH_LONG).show();
 					if (afterLoginListener != null)
@@ -121,13 +126,13 @@ public class FacebookLoginHelper {
 					getFriendsList(user, afterLoginListener);
 
 				}
-				TeluguBeatsApp.getUiUtils().removeUiBlock();
+				app.getUiUtils().removeUiBlock();
 			}
 			}).executeAsync();
 	}
 
 	protected void getFriendsList(final User user, final GenericListener<User> afterLoginListener  ) {
-		TeluguBeatsApp.getUiUtils().addUiBlock("Checking Friends");
+		app.getUiUtils().addUiBlock("Checking Friends");
 
 		Task.callInBackground(new Callable<Void>() {
 			@Override
@@ -156,7 +161,7 @@ public class FacebookLoginHelper {
 		}).onSuccess(new Continuation<Void, Void>() {
 			@Override
 			public Void then(Task<Void> task) throws Exception {
-				TeluguBeatsApp.getUiUtils().removeUiBlock();
+				app.getUiUtils().removeUiBlock();
 				afterLoginListener.onData(user);
 				return null;
 			}

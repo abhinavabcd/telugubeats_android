@@ -1,11 +1,9 @@
 package com.appsandlabs.telugubeats;
 
 import android.app.Application;
-import android.graphics.Bitmap;
 
 import com.appsandlabs.telugubeats.datalisteners.GenericListener2;
 import com.appsandlabs.telugubeats.enums.NotifificationProcessingState;
-import com.appsandlabs.telugubeats.helpers.ServerCalls;
 import com.appsandlabs.telugubeats.models.User;
 import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.analytics.GoogleAnalytics;
@@ -42,8 +40,6 @@ public class TeluguBeatsApp extends Application {
 
 
     public static User currentUser;
-    public static Bitmap blurredCurrentSongBg = null;
-    private static ServerCalls serverCalls;
     private int applicationLaunchId;
 
     /**
@@ -62,10 +58,6 @@ public class TeluguBeatsApp extends Application {
      */
     public static Tracker tracker() {
         return tracker;
-    }
-
-    public static ServerCalls getServerCalls() {
-        return serverCalls;
     }
 
     boolean hasInitied = false;
