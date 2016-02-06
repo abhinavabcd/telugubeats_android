@@ -14,6 +14,10 @@ public class Poll extends  BaseModel{
     @SerializedName("stream_id")
     public String streamId;
 
+    @SerializedName("created_at")
+    DateTime createdAt;
+
+
     public int getMaxPolls(){
         if(pollItems==null) return 1;
         int max = 1;

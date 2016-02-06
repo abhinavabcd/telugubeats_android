@@ -9,23 +9,12 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/header_height"
+        android:layout_height="wrap_content"
         android:id="@+id/current_song_header"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:background="@color/translucent_black"
         >
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="10sp"
-            android:capitalize="characters"
-            android:text="Telugu beats is a live radio, where you can talk and entertain people. People talk is coming soon. We are currently on 16kBps stream and we suggest you enjoy the audio on a stable connection like a wifi. We'll notify you when 8kBps is up."
-            android:gravity="center"
-            android:padding="4dp"
-            android:lineSpacingExtra="4dp"
-            android:id="@+id/app_status_text" />
 
         <LinearLayout
             android:orientation="horizontal"
@@ -224,20 +213,12 @@
                </LinearLayout>
            </LinearLayout>
 
-           <LinearLayout
-               android:id="@+id/visualizer"
-               android:layout_width="match_parent"
-               android:orientation="vertical"
-               android:layout_height="100dp"/>
+
 
 
        </LinearLayout>
 
     </LinearLayout>
-    <ru.noties.scrollable.sample.TabsLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/tabs_height"
-    android:id="@+id/tabs" />
     <!--android:background="@color/tabs_background"-->
 
 </LinearLayout>

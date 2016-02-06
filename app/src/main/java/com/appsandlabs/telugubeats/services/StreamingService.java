@@ -2,16 +2,18 @@ package com.appsandlabs.telugubeats.services;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
@@ -72,17 +74,31 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     public static Stream stream;
     private RemoteViews simpleContentView;
     private RemoteViews expandedView;
+    private NotificationCompat.Builder notificationBuilder;
+    private NotificationManager mNotificationManager;
+    private Gson gson = new Gson();
 
-    public void setStream(Stream stream) {
+    public void setStream(Stream stream, boolean isNew) {
+
         StreamingService.stream = stream;
-        Intent intent = new Intent();
-        intent.setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION);
-        intent.putExtra(Constants.NEW_STREAM, new Gson().toJson(stream));
-        sendBroadcast(intent);
-        downloadBitmapsInBg(stream);
+        if(stream!=null) {
+            if(isNew)
+                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
+            else{
+                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
+            }
+            resetNotification();
+            downloadBitmapsInBg(stream);
+        }
+    }
+
+
+    private void setStream(Stream stream) {
+        setStream(stream , true);
     }
 
     private void downloadBitmapsInBg(final Stream stream) {
+        if(stream==null) return;
         Thread bitmapDownloaderThread = new Thread(){
             @Override
             public void run() {
@@ -114,24 +130,27 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         return null;
     }
 
-
     @Override
     public void onCreate() {
-        super.onCreate();
         this.app = new App(getApplicationContext());
-		isPlaying = false;
+        isPlaying = false;
         setStream(null);
         Log.e(Config.ERR_LOG_TAG, "one time setup");
         showNotification(); // show notification and show notification
+        super.onCreate();
     }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent==null) return START_STICKY;
         Bundle extras = intent.getExtras();
         String streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
 
         if(streamId!=null){
-            if(stream==null || !stream.streamId.equalsIgnoreCase(streamId)) {//start a new stream
+            if(stream==null || !stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
                 playStream(streamId);
+            }
+            else{
+                sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
             }
             return START_STICKY;
         }
@@ -152,7 +171,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         }
 
 
-        Log.e(Config.ERR_LOG_TAG, "Service start called");
+        Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
         return START_STICKY;
     }
 
@@ -272,7 +291,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private float[] fftArrayLeft;
     private float[] fftArrayRight;
 
-    private String streamInfoBytes = new String();
+    private String streamInfoBytes = null;
 
 
     public byte[] decode(InputStream stream)
@@ -298,7 +317,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             Bitstream bitstream = new Bitstream(inputStream);
             Decoder decoder = new Decoder();
             isPlaying = true;
-            while (!isPlaying) {
+            while (isPlaying) {
                 Header frameHeader = bitstream.readFrame();
                 if (frameHeader == null) {
                     throw (new IOException());
@@ -321,7 +340,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
                     if (streamInfoBytes != null) {
                         Log.d(Config.ERR_LOG_TAG, streamInfoBytes);
-                        setStream(new Gson().fromJson(streamInfoBytes, Stream.class));
+                        //Log.d(Config.ERR_LOG_TAG, streamInfoBytes);
+                        setStream(gson.fromJson(streamInfoBytes.replace('\0', ' '), Stream.class), false);
+
                         streamInfoBytes = null;
                     }
                     totalMs += frameHeader.ms_per_frame();
@@ -374,12 +395,13 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     }
 
 
+
     boolean currentVersionSupportBigNotification = Config.currentVersionSupportBigNotification();
     boolean currentVersionSupportLockScreenControls = Config.currentVersionSupportLockScreenControls();
 
     @SuppressLint("NewApi")
     private void showNotification() {
-        showNotification(false);
+        showNotification(true);
     }
 
 
@@ -389,27 +411,11 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
          */
     @SuppressLint("NewApi")
     private void showNotification(boolean showDeleteButton) {
+
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
         simpleContentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_notification);
         expandedView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.big_notification);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getApplicationContext())
-                    .setSmallIcon(R.drawable.ic_music)
-                    .setContentTitle(stream.title);
-
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, StreamActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-        notificationBuilder.setContentIntent(contentIntent);
-
-        final Notification notification = notificationBuilder.build();
-
-        setNotificationListeners(simpleContentView);
-        setNotificationListeners(expandedView);
-
-        notification.contentView = simpleContentView;
-        if (currentVersionSupportBigNotification) {
-            notification.bigContentView = expandedView;
-        }
 
 
         if(!showDeleteButton) {
@@ -420,27 +426,68 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             }
         }
 
+        setNotificationListeners(simpleContentView);
+        setNotificationListeners(expandedView);
+
+
+
+
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, StreamActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        notificationBuilder = new NotificationCompat.Builder(getApplicationContext())
+                .setSmallIcon(R.drawable.ic_music)
+                .setContentTitle(stream == null ? "Streaming...." : stream.title);
+
+
+        notificationBuilder.setContentIntent(contentIntent);
+        notificationBuilder.setOnlyAlertOnce(true);
+        Notification notification = notificationBuilder.build();
+
+        notification.contentView = simpleContentView;
+        if (currentVersionSupportBigNotification) {
+            notification.bigContentView = expandedView;
+        }
+
+
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
 
-        AppWidgetManager manager = AppWidgetManager.getInstance(getApplicationContext());
-        manager.updateAppWidget(Config.NOTIFICATION_ID, notification.contentView);
-
-        resetNotification();
         startForeground(Config.NOTIFICATION_ID, notification);
     }
 
+
+    private void refreshNotification(){
+
+        int api = Build.VERSION.SDK_INT;
+        // update the icon
+        // update the notification
+        Notification notification = notificationBuilder.build();
+
+        notification.contentView = simpleContentView;
+        if (currentVersionSupportBigNotification) {
+            notification.bigContentView = expandedView;
+        }
+
+        notification.flags |= Notification.FLAG_ONGOING_EVENT;
+
+        mNotificationManager.notify(Config.NOTIFICATION_ID, notification);
+    }
 
 
     private void resetNotificationTitles() {
         if(stream==null) return;
         simpleContentView.setTextViewText(R.id.title, stream.title);
-        simpleContentView.setTextViewText(R.id.subtitle , stream.getSubTitle());
+        simpleContentView.setTextViewText(R.id.subtitle, stream.getSubTitle());
         if (currentVersionSupportBigNotification) {
             expandedView.setTextViewText(R.id.title, stream.title);
             expandedView.setTextViewText(R.id.subtitle, stream.getSubTitle());
         }
+        refreshNotification();
     }
+
+
 
     private void resetNotificationPlayPause() {
         if (!isPlaying) {
@@ -460,24 +507,31 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
                 expandedView.setViewVisibility(R.id.btnPlay, View.GONE);
             }
         }
+        refreshNotification();
     }
 
     private void resetNotificationBitmap() {
 
         if(stream.image!=null){
-            simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, app.getUiUtils().getBitmapFromURL(stream.image));
-            if (currentVersionSupportBigNotification) {
-                expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, app.getUiUtils().getBitmapFromURL(stream.image));
-            }
+            app.getUiUtils().getBitmapFromURL(stream.image, new GenericListener<Bitmap>() {
+                @Override
+                public void onData(Bitmap s) {
+                    simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
+                    if (currentVersionSupportBigNotification) {
+                        expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
+                    }
+                    refreshNotification();
+                }
+            });
         }
 
     }
 
     private void resetNotification() {
+        if(stream==null) return;
         resetNotificationBitmap();
         resetNotificationPlayPause();
         resetNotificationTitles();
-
 
     }
 
@@ -537,8 +591,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     final Object sync = new Object();
     private boolean playStream(String streamId) {
 
-        if((isPlaying || playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId))
+        if((isPlaying || playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
             return false;
+        }
 
         app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
             @Override
@@ -548,7 +603,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
                     return;
                 }
                 setStream(s);
-                resetNotification();
                 if (requestAudioFocus()) {
                     // 2. Kill off any other play back sources
                     forceMusicStop();
@@ -575,7 +629,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        setStream(null);
         //stopped here
     }
 

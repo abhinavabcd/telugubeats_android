@@ -7,15 +7,37 @@
     android:background="@color/transparent"
     >
 
-            <ListView
-                android:id="@+id/scrolling_dedications"
+
+    <LinearLayout
+        android:layout_marginBottom="50dp"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/visualizer"
                 android:layout_width="match_parent"
                 android:orientation="vertical"
-                android:dividerHeight="2px"
-                android:divider="@color/translucent_white"
-                android:layout_height="match_parent"
-                android:layout_marginBottom="50dp"
-                android:layout_weight="1"/>
+
+                android:layout_height="100dp"
+                android:layout_centerVertical="true" />
+
+            <include layout="@layout/stream_info_header"></include>
+
+        </RelativeLayout>
+        <ListView
+            android:id="@+id/scrolling_dedications"
+            android:layout_width="match_parent"
+            android:dividerHeight="2px"
+            android:divider="@color/translucent_white"
+            android:layout_height="0dp"
+
+            android:layout_weight="1"/>
+    </LinearLayout>
+
 
     <LinearLayout
         android:layout_alignParentBottom="true"

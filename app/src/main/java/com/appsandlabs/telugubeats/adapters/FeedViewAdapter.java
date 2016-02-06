@@ -49,7 +49,9 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
                 renderNormalEvent(evt, convertView, parent);
                 break;
         }
-        return null;
+        View view = new View(getContext());
+        view.setVisibility(View.GONE);
+        return view;
     }
 
     private void renderNormalEvent(StreamEvent evt, View convertView, ViewGroup parent) {

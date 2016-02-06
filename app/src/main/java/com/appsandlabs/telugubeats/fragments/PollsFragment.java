@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
+import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.Constants;
@@ -57,15 +59,13 @@ public class PollsFragment extends Fragment {
 
         layout = (LinearLayout) inflater.inflate(R.layout.polls_fragment_layout, null);
         initUiHandle(layout);
-        final Stream stream = StreamingService.stream;
-        Context ctx = inflater.getContext();
         return layout;
     }
 
 
     @Override
     public void onResume() {
-
+        Log.e(Config.ERR_LOG_TAG, "resuming polls fragment");
         pollEventsReciever = new BroadcastReceiver(){
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -76,8 +76,8 @@ public class PollsFragment extends Fragment {
                     if(event.eventId== StreamEvent.EventId.POLLS_CHANGED){
                         uiHandle.livePollsList.pollsChanged(gson.fromJson(event.data, PollsChanged.class));
                     }
-                    else if (event.eventId == StreamEvent.EventId.RESET_POLLS){
-                        new App(getActivity()).getServerCalls().getPollById(stream.streamId, event.data, new GenericListener<Poll>(){
+                    else if (event.eventId == StreamEvent.EventId.NEW_POLL){
+                        new App(getActivity()).getServerCalls().getPollById(event.data, new GenericListener<Poll>(){
                             @Override
                             public void onData(Poll poll) {
                                 stream.livePoll = poll;
@@ -107,8 +107,11 @@ public class PollsFragment extends Fragment {
                 }
             }
         };
+        Log.e(Config.ERR_LOG_TAG, "resuming polls fragment");
+
         getActivity().registerReceiver(pollEventsReciever, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
-        pollEventsReciever.onReceive(getActivity(), new Intent().putExtra(Constants.POLLS_ACTION, EventsHelper.Event.POLLS_RESET));
+        Log.e(Config.ERR_LOG_TAG, "resuming polls fragment");
+        pollEventsReciever.onReceive(getActivity(), new Intent().putExtra(Constants.POLLS_ACTION, EventsHelper.Event.POLLS_RESET.toString()));
 
         super.onResume();
     }

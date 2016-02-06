@@ -4,7 +4,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
-import com.appsandlabs.telugubeats.fragments.ChatAndEventsFragment;
+import com.appsandlabs.telugubeats.fragments.StreamAndEventsFragment;
 import com.appsandlabs.telugubeats.fragments.PollsFragment;
 import com.appsandlabs.telugubeats.models.Stream;
 
@@ -26,7 +26,7 @@ public class StreamInfoFragments extends FragmentPagerAdapter {
             // Return a PlaceholderFragment (defined as a static inner class below).
             if (position == 0) {
                 //TODO: is just a list fragment with textinput to post
-                ChatAndEventsFragment chatFragment = new ChatAndEventsFragment();
+                StreamAndEventsFragment chatFragment = new StreamAndEventsFragment();
                 return chatFragment;
             }
             else if (position==1) {

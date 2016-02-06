@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ru.noties.scrollable.ScrollableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:scrollable_maxScroll="@dimen/header_height"
     >
 
-    <include layout="@layout/stream_info_header"></include>
+
 
     <android.support.v4.view.ViewPager
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-    android:layout_marginTop="@dimen/tabs_height"
-    android:id="@+id/stream_view_pager" />
+    android:id="@+id/stream_view_pager" >
 
-</ru.noties.scrollable.ScrollableLayout>
+    </android.support.v4.view.ViewPager>
+
+</LinearLayout>

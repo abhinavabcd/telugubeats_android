@@ -41,7 +41,7 @@ public class ServerCalls {
         client.setMaxRetriesAndTimeout(1, 5000);
         client.setTimeout(4000);
         client.setMaxConnections(100);
-        client.addHeader("user_auth", app.getUserDeviceManager().getAuthKey());
+        client.addHeader("auth-key", app.getUserDeviceManager().getAuthKey());
     }
 
     public void setUserGCMKey(String installationKey , String registrationId, final GenericListener<Boolean> dataInputListener) {
@@ -216,14 +216,14 @@ public class ServerCalls {
 
     }
 
-    public void getPollById(String streamId, String pollId, final GenericListener<Poll> listener) {
+    public void getPollById(String pollId, final GenericListener<Poll> listener) {
         String authKey = app.getUserDeviceManager().getAuthKey();
         if(authKey==null){
             //TODO: login dialog
             return;
         }
 
-        client.get(SERVER_ADDR + "/get_poll_by_id/" + streamId + "/" +pollId, new AsyncHttpResponseHandler() {
+        client.get(SERVER_ADDR + "/get_poll_by_id/" +pollId, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Poll poll = gson.fromJson(new String(responseBody), Poll.class);

@@ -924,7 +924,8 @@ public class UiUtils {
 		}).onSuccess(new Continuation<Bitmap, Object>() {
 			@Override
 			public Object then(Task<Bitmap> task) throws Exception {
-				genericListener.onData(task.getResult());
+				if(task.getResult()!=null)
+					genericListener.onData(task.getResult());
 				return null;
 			}
 		});
@@ -950,7 +951,8 @@ public class UiUtils {
 			@Override
 			public void run() {
 				// Select the last row so it will scroll into view...
-				listView.setSelection(listView.getAdapter().getCount() - 1);
+				if(listView.getAdapter()!=null)
+					listView.setSelection(listView.getAdapter().getCount() - 1);
 			}
 		});
 	}

@@ -45,7 +45,6 @@ public class PollsListView extends ListView {
         super(context, attrs);
         setAdapter(new ArrayAdapter<PollItem>(context, -1, pollItems = new ArrayList<PollItem>()) {
 
-
             @Override
             public void notifyDataSetChanged() {
                 super.notifyDataSetChanged();
@@ -149,7 +148,7 @@ public class PollsListView extends ListView {
         this.pollItems.clear();
         Random random = new Random();
         currentVotedItem = null;
-        for(PollItem pollItem : poll.pollItems){
+            for(PollItem pollItem : poll.pollItems){
             this.pollItems.add(pollItem);
             pollItem.color = UiUtils.generateRandomColor(Color.WHITE);
             if(pollItem.isVoted)
@@ -164,8 +163,6 @@ public class PollsListView extends ListView {
     public void pollsChanged(PollsChanged data) {
         notifyDataSetChanged();
     }
-
-
 
     private void notifyDataSetChanged() {
         ((ArrayAdapter)getAdapter()).notifyDataSetChanged();

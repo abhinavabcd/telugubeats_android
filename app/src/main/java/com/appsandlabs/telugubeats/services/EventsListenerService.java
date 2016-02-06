@@ -26,6 +26,7 @@ public class EventsListenerService extends IntentService {
     private HttpURLConnection con;
     private static InputStream inpStream;
     private int currentReaderId;
+    private String streamId;
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -57,6 +58,10 @@ public class EventsListenerService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         currentReaderId = new Random().nextInt();
+        Bundle extras = intent.getExtras();
+        this.streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
+
+        if(streamId==null) return;
         startReadingEvents(currentReaderId);
     }
 
@@ -65,7 +70,7 @@ public class EventsListenerService extends IntentService {
         URL url = null;
         Log.e(Config.ERR_LOG_TAG, "Events listener has started ");
         try {
-            url = new URL(ServerCalls.SERVER_ADDR + "/listen_events/" + StreamingService.stream.streamId);
+            url = new URL(ServerCalls.SERVER_ADDR + "/listen_events/" + streamId);
             con = (HttpURLConnection) url.openConnection();
             con.setRequestProperty("Connection", "keep-alive");
             inpStream = con.getInputStream();
@@ -128,6 +133,7 @@ public class EventsListenerService extends IntentService {
         if(readerId!=currentReaderId){
             return false;
         }
+
         StreamingService.stream.events.add(event);
         sendBroadcast(new Intent(Constants.NEW_EVENT_BROADCAST_ACTION).putExtra(Constants.STREAM_EVENT_ID, event.id.getId()));
         return true;

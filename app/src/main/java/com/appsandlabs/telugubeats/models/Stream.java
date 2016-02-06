@@ -61,8 +61,11 @@ public class Stream extends BaseModel{
         if(image==null) {
             return null;
         }
-        bitmap =  app.getUiUtils().getBitmapFromURL(image);
-        blurredImageBitmap = app.getUiUtils().fastblur(bitmap, 0.5f, 50);
+        Bitmap bitmap =  app.getUiUtils().getBitmapFromURL(image);
+        if(bitmap==null) return null;
+
+        this.bitmap = bitmap;
+        blurredImageBitmap = app.getUiUtils().fastblur(bitmap, 5, 40);
         return bitmap;
     }
 
@@ -83,9 +86,9 @@ public class Stream extends BaseModel{
     }
 
     public StreamEvent getEventById(String eventId) {
-        for(int i=events.size()-1;i>=0;i++){
+        for(int i=events.size()-1;i>=0;i--){
             StreamEvent event = events.get(i);
-            if(event.eventId.toString().equalsIgnoreCase(eventId)){
+            if(event.id.toString().equalsIgnoreCase(eventId)){
                 return event;
             }
         }
@@ -93,4 +96,7 @@ public class Stream extends BaseModel{
     }
 
 
+    public void setEvents(List<StreamEvent> events) {
+        this.events = new LinkedList<>(events);
+    }
 }

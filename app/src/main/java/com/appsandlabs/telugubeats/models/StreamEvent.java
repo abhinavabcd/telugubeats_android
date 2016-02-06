@@ -2,7 +2,6 @@ package com.appsandlabs.telugubeats.models;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -11,7 +10,8 @@ import java.util.List;
 public class StreamEvent extends BaseModel {
 
     public enum EventId{
-        RESET_POLLS,
+        NEW_SONG,
+        NEW_POLL,
         POLLS_CHANGED,
         CHAT_MESSAGE,
         DEDICATE;
@@ -28,5 +28,5 @@ public class StreamEvent extends BaseModel {
     public List<String> tags;
 
     @SerializedName("updated_at")
-    public Date updatedAt;
+    public DateTime updatedAt;
 }
