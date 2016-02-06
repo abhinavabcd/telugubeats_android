@@ -25,7 +25,7 @@ import java.util.List;
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
-    public static final String SERVER_ADDR = "http://192.168.0.8:8888";
+    public static final String SERVER_ADDR = "http://192.168.0.4:8888";
     private final Context context;
     private final App app;
 

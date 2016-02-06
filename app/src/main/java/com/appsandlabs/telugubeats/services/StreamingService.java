@@ -82,8 +82,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
         StreamingService.stream = stream;
         if(stream!=null) {
-            if(isNew)
+            if(isNew) {
                 sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
+            }
             else{
                 sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
             }
@@ -152,26 +153,27 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             else{
                 sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
             }
-            return START_STICKY;
+        }
+        else {
+
+            String action = intent.getAction();
+            if (action != null && action.equalsIgnoreCase(NOTIFY_PLAY)) {
+                if (stream != null && !isPlaying)
+                    playStream(stream.streamId);
+            }
+
+            if (action != null && action.equalsIgnoreCase(NOTIFY_PAUSE)) {
+                stopStream();
+            }
+            if (action != null && action.equalsIgnoreCase(NOTIFY_DELETE)) {
+                stopStream();
+                stopForeground(true);
+                stopSelf();
+            }
+            resetNotification();
+            Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
         }
 
-        String action = intent.getAction();
-        if(action!=null && action.equalsIgnoreCase(NOTIFY_PLAY)){
-            if(stream!=null && !isPlaying)
-                playStream(stream.streamId);
-        }
-
-        if(action!=null && action.equalsIgnoreCase(NOTIFY_PAUSE)){
-            stopStream();
-        }
-        if(action!=null && action.equalsIgnoreCase(NOTIFY_DELETE)){
-            stopStream();
-            stopForeground(true);
-            stopSelf();
-        }
-
-
-        Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
         return START_STICKY;
     }
 
@@ -312,11 +314,15 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         fftArrayLeft = new float[leftFft.specSize()];
         fftArrayRight = new float[rightFft.specSize()];
 
-        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+
         try {
             Bitstream bitstream = new Bitstream(inputStream);
             Decoder decoder = new Decoder();
             isPlaying = true;
+
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+            resetNotification();
+
             while (isPlaying) {
                 Header frameHeader = bitstream.readFrame();
                 if (frameHeader == null) {
@@ -544,8 +550,10 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     public void setNotificationListeners(RemoteViews view) {
         Intent delete = new Intent(getApplicationContext(), StreamingService.class);
         delete.setAction(NOTIFY_DELETE);
+
         Intent pause = new Intent(getApplicationContext(), StreamingService.class);
         pause.setAction(NOTIFY_PAUSE);
+
         Intent play = new Intent(getApplicationContext(), StreamingService.class);
         play.setAction(NOTIFY_PLAY);
 
@@ -557,6 +565,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
         PendingIntent pPlay = PendingIntent.getService(getApplicationContext(), 2, play, PendingIntent.FLAG_UPDATE_CURRENT);
         view.setOnClickPendingIntent(R.id.btnPlay, pPlay);
+
     }
 
 
@@ -591,7 +600,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     final Object sync = new Object();
     private boolean playStream(String streamId) {
 
-        if((isPlaying || playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
+        if(isPlaying && (playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
             return false;
         }
 

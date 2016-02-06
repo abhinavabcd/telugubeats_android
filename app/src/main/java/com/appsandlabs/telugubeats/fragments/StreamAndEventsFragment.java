@@ -253,7 +253,6 @@ public class StreamAndEventsFragment extends Fragment {
             public void onData(List<StreamEvent> s) {
                 Stream stream = StreamingService.stream;
                 stream.setEvents(s);
-                getActivity().registerReceiver(eventsReceiver, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
                 if (s != null) {
                     feedAdapter = new FeedViewAdapter(getActivity(), 0, new ArrayList<StreamEvent>());
                     for (StreamEvent evt : s) {
@@ -264,6 +263,7 @@ public class StreamAndEventsFragment extends Fragment {
                 }
             }
         });
+        getActivity().registerReceiver(eventsReceiver, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
     }
 
     private void renderEvent(StreamEvent event, boolean refresh) {
