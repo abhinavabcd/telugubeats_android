@@ -3,8 +3,10 @@ package com.appsandlabs.telugubeats;
 import android.content.Context;
 
 import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
+import com.appsandlabs.telugubeats.models.User;
 
 /**
  * Created by abhinav on 2/3/16.
@@ -64,6 +66,12 @@ public class App {
     }
 
 
-
-
+    public void getCurrentUser(GenericListener<User> listener) {
+        if(TeluguBeatsApp.currentUser!=null){
+            listener.onData(TeluguBeatsApp.currentUser);
+        }
+        else{
+            getServerCalls().getCurrentUser(listener);
+        }
+    }
 }

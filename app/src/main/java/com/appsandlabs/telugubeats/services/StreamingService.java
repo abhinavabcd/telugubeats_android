@@ -296,7 +296,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private String streamInfoBytes = null;
 
 
-    public byte[] decode(InputStream stream)
+    public void decode(InputStream stream)
             throws IOException, DecoderException {
         TByteArrayOutputStream audioLeft = new TByteArrayOutputStream(FFT_N_SAMPLES);
         TByteArrayOutputStream audioRight = new TByteArrayOutputStream(FFT_N_SAMPLES);
@@ -389,13 +389,16 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
                 bitstream.closeFrame();
             }
 
-            return null;
+            return;
         } catch (BitstreamException e) {
             throw new IOException("Bitstream error: " + e);
         } catch (DecoderException e) {
             Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
             throw new DecoderException("Decoder error", e);
-        } finally {
+        } catch (Exception e) {
+            Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
+        }
+        finally {
             IOUtils.closeQuietly(inputStream);
         }
     }

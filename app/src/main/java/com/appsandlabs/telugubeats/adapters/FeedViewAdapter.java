@@ -92,7 +92,7 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
         }
 
         viewHolder = (ChatViewHolder) convertView.getTag();
-        viewHolder.setAlignment(evt.fromUser== TeluguBeatsApp.currentUser);
+        viewHolder.setAlignment(evt.fromUser.id.toString().equalsIgnoreCase(TeluguBeatsApp.currentUser.id.toString()));
         viewHolder.txtMessage.setText(evt.data);
         viewHolder.txtInfo.setText(evt.getUserName() + ". " +evt.updatedAt.toString());
         return convertView;

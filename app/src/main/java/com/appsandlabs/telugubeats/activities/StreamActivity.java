@@ -14,9 +14,11 @@ import android.view.MenuItem;
 import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.UserDeviceManager;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.pageradapters.StreamInfoFragments;
 import com.appsandlabs.telugubeats.services.StreamingService;
 
@@ -100,13 +102,19 @@ public class StreamActivity extends AppBaseFragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        registerStreamChangesListener();
-        startService(new Intent(this, StreamingService.class).putExtra(Constants.STREAM_ID, streamId));
+        app.getCurrentUser(new GenericListener<User>() {
+            @Override
+            public void onData(User s) {
+                registerStreamChangesListener();
+                startService(new Intent(StreamActivity.this, StreamingService.class).putExtra(Constants.STREAM_ID, streamId));
+            }
+        });
     }
 
     @Override
     protected void onPause() {
-        unregisterReceiver(streamInfoChangesreceiver);
+        if(streamInfoChangesreceiver!=null)
+            unregisterReceiver(streamInfoChangesreceiver);
         super.onPause();
     }
 
@@ -146,7 +154,5 @@ public class StreamActivity extends AppBaseFragmentActivity {
         startActivity(i);
         finish();
     }
-
-
 
 }

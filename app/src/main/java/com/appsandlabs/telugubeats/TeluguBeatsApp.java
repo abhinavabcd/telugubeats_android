@@ -90,9 +90,4 @@ public class TeluguBeatsApp extends Application {
                 .setAction(Tracking.LAUNCH.toString())
                 .build());
     }
-
-
-
-
-
 }

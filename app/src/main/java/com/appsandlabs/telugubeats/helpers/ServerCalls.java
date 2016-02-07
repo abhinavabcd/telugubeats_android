@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.models.StreamEvent;
@@ -233,6 +234,25 @@ public class ServerCalls {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 listener.onData(null);
+            }
+        });
+    }
+
+    public void getCurrentUser(final GenericListener<User> listener) {
+        client.addHeader("auth-key", app.getUserDeviceManager().getAuthKey());
+        client.get(SERVER_ADDR + "/get_current_user", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                User user = gson.fromJson(new String(responseBody), User.class);
+                if(user!=null) {
+                    TeluguBeatsApp.currentUser = user;
+                    listener.onData(user);
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
             }
         });
     }
