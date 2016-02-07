@@ -2,6 +2,7 @@ package com.appsandlabs.telugubeats.widgets;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
@@ -39,7 +40,8 @@ public class PollsListView extends ListView {
 
     private int maxPoll = 0;
     private Poll poll;
-
+    Handler handler = new Handler();
+    private Runnable pendingServerCall = null;
 
     public PollsListView(final Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -126,12 +128,28 @@ public class PollsListView extends ListView {
         currentVotedItem  = pollItem;
         pollItem.pollCount++;
         maxPoll = poll.getMaxPolls();
-        new App(getContext()).getServerCalls().sendPoll(StreamingService.stream.streamId , pollItem, new GenericListener<Boolean>() {
+
+
+        if(pendingServerCall!=null){
+            handler.removeCallbacks(pendingServerCall);
+        }
+        handler.postDelayed(serverCallSender(pollItem), 5000);
+
+    }
+
+    private Runnable serverCallSender(final PollItem pollItem) {
+        return pendingServerCall = new Runnable() {
             @Override
-            public void onData(Boolean a) {
-                //TOOD:okay
+            public void run() {
+                new App(getContext()).getServerCalls().sendPoll(StreamingService.stream.streamId, pollItem, new GenericListener<Boolean>() {
+                    @Override
+                    public void onData(Boolean a) {
+
+                    }
+                });
+                pendingServerCall = null;
             }
-        });
+        };
     }
 
 

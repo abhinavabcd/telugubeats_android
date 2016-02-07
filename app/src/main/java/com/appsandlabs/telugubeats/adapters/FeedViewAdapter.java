@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
@@ -29,12 +30,12 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
 
     @Override
     public int getViewTypeCount() {
-        return 2;
+        return 5;
     }
 
     @Override
     public int getItemViewType(int position) {
-        return StreamEvent.EventId.CHAT_MESSAGE.ordinal();
+        return getItem(position).eventId.ordinal();
     }
 
     @Override
@@ -46,15 +47,16 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
                 return renderChatMessage(evt, convertView, parent);
             case DEDICATE:
             case POLLS_CHANGED:
-                renderNormalEvent(evt, convertView, parent);
-                break;
+                return renderNormalEvent(evt, convertView, parent);
         }
+        if(convertView!=null)
+            return convertView;
+
         View view = new View(getContext());
-        view.setVisibility(View.GONE);
         return view;
     }
 
-    private void renderNormalEvent(StreamEvent evt, View convertView, ViewGroup parent) {
+    private View renderNormalEvent(StreamEvent evt, View convertView, ViewGroup parent) {
         GenericFeedTextHolder feedUiHandle = null;
         if(convertView==null){
             LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -76,6 +78,7 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
             feedUiHandle.userName.setGravity(Gravity.CENTER_HORIZONTAL);
             feedUiHandle.userMessage.setVisibility(View.GONE);
         }
+        return convertView;
 
     }
 
@@ -83,7 +86,7 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
         ChatViewHolder viewHolder = null;
         if(convertView==null){
             LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            LinearLayout feedView = (LinearLayout) inflater.inflate(R.layout.list_item_chat_message,parent , false);
+            RelativeLayout feedView = (RelativeLayout) inflater.inflate(R.layout.list_item_chat_message,parent , false);
             feedView.setTag(ChatViewHolder.createViewHolder(feedView));
             convertView = feedView;
         }
@@ -91,7 +94,7 @@ public class FeedViewAdapter extends ArrayAdapter<StreamEvent> {
         viewHolder = (ChatViewHolder) convertView.getTag();
         viewHolder.setAlignment(evt.fromUser== TeluguBeatsApp.currentUser);
         viewHolder.txtMessage.setText(evt.data);
-        viewHolder.txtInfo.setText(evt.updatedAt.toString());
+        viewHolder.txtInfo.setText(evt.getUserName() + ". " +evt.updatedAt.toString());
         return convertView;
     }
 

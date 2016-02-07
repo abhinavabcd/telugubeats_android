@@ -7,15 +7,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/txtInfo"
-            android:layout_width="wrap_content"
-            android:layout_height="30sp"
-            android:layout_gravity="right"
-            android:textSize="12sp"
-            android:textColor="@android:color/darker_gray" />
+        android:orientation="vertical"
+        android:paddingTop="5dp">
 
         <LinearLayout
             android:id="@+id/contentWithBackground"
@@ -32,7 +25,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/black"
-                android:maxWidth="240dp" />
+                android:maxWidth="240dp"
+                android:text="Hello how are you "
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:textSize="8sp"
+                android:textColor="#323232"
+                android:text="Abhinav Reddy 10:16pm" />
 
         </LinearLayout>
 

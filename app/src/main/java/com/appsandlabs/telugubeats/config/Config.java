@@ -1,5 +1,7 @@
 package com.appsandlabs.telugubeats.config;
 
+import java.text.SimpleDateFormat;
+
 /**
  * Created by abhinav on 9/27/15.
  */
@@ -20,6 +22,8 @@ public class Config {
 
     public static String PREF_INSTALLATION_KEY = "pref_installation_key";
     public static String PREF_GCM_SAVED = "pref_gcm_saved";
+    private static SimpleDateFormat dateFormatter = new SimpleDateFormat("MMM dd hh:mma");
+    ;
 
 
     public static boolean currentVersionSupportBigNotification() {
@@ -36,5 +40,9 @@ public class Config {
             return true;
         }
         return false;
+    }
+
+    public static SimpleDateFormat getDateFormatter() {
+        return dateFormatter;
     }
 }

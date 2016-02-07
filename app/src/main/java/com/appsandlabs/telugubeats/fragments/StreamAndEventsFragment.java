@@ -251,6 +251,7 @@ public class StreamAndEventsFragment extends Fragment {
         app.getServerCalls().getLastEvents(StreamingService.stream.streamId, 0, new GenericListener<List<StreamEvent>>() {
             @Override
             public void onData(List<StreamEvent> s) {
+                if(s==null) return;
                 Stream stream = StreamingService.stream;
                 stream.setEvents(s);
                 if (s != null) {

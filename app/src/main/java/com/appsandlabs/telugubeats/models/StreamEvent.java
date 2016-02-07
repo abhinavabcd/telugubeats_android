@@ -9,6 +9,10 @@ import java.util.List;
  */
 public class StreamEvent extends BaseModel {
 
+    public String getUserName() {
+        return fromUser==null?"":(fromUser.name==null?"":fromUser.name);
+    }
+
     public enum EventId{
         NEW_SONG,
         NEW_POLL,

@@ -1,5 +1,7 @@
 package com.appsandlabs.telugubeats.models;
 
+import com.appsandlabs.telugubeats.config.Config;
+
 import java.util.Date;
 
 /**
@@ -12,7 +14,7 @@ public class DateTime {
         public String toString() {
             Date date = getDate();
             if(date!=null)
-                date.toString();
+                return Config.getDateFormatter().format(getDate());
             return "";
         }
 
