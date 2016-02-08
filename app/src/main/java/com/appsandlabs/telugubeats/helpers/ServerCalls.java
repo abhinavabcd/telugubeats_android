@@ -26,7 +26,7 @@ import java.util.List;
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
-    public static final String SERVER_ADDR = "http://192.168.0.4:8888";
+    public static final String SERVER_ADDR = "http://192.168.0.108:8888";
     private final Context context;
     private final App app;
 
@@ -85,6 +85,7 @@ public class ServerCalls {
     }
 
     public void getCurrentPoll(String streamId ,final GenericListener<Poll> listener ){
+        client.addHeader("auth-key", app.getUserDeviceManager().getAuthKey());
         client.get(SERVER_ADDR + "/get_current_poll/" + streamId , new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {

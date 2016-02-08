@@ -66,7 +66,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
                      if (isFirstTimeStreamLoad) {
                          isFirstTimeStreamLoad = false;
 
-                         setContentView(R.layout.activity_main);
+                         setContentView(R.layout.activity_stream);
                          addTabs(stream);
                      }
                  }
@@ -93,11 +93,6 @@ public class StreamActivity extends AppBaseFragmentActivity {
         ((ViewPager)findViewById(R.id.stream_view_pager)).setAdapter(appFragments);
 
     }
-
-
-
-
-
 
     @Override
     protected void onResume() {

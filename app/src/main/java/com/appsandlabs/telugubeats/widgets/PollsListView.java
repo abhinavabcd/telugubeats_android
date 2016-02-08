@@ -166,7 +166,7 @@ public class PollsListView extends ListView {
         this.pollItems.clear();
         Random random = new Random();
         currentVotedItem = null;
-            for(PollItem pollItem : poll.pollItems){
+        for(PollItem pollItem : poll.pollItems){
             this.pollItems.add(pollItem);
             pollItem.color = UiUtils.generateRandomColor(Color.WHITE);
             if(pollItem.isVoted)

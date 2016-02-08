@@ -223,6 +223,7 @@ public class StreamAndEventsFragment extends Fragment {
     @Override
     public void onResume() {
 
+        super.onResume();
         Stream stream = StreamingService.stream;
         //start events reading service
         getActivity().startService(new Intent(getActivity(), EventsListenerService.class).putExtra(Constants.STREAM_ID, stream.streamId));
@@ -231,7 +232,6 @@ public class StreamAndEventsFragment extends Fragment {
         registerStreamChangesListener();
         registerEventChangesListener();
 
-        super.onResume();
     }
 
     private void registerEventChangesListener() {

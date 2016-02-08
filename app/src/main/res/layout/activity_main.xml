@@ -1,18 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/layout"
-    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    >
+    android:orientation="vertical"
+    tools:context="com.appsandlabs.telugubeats.activities.MainActivity">
 
+    <FrameLayout
+        android:id="@+id/tap_heart"
+        android:layout_width="match_parent"
+        android:layout_height="100dp">
 
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/heart_icon"
+            android:id="@+id/heart_icon"
+            android:layout_marginTop="200dp" />
+
+    </FrameLayout>
 
     <android.support.v4.view.ViewPager
+        android:layout_height="0dp"
+        android:layout_weight="1.0"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-    android:id="@+id/stream_view_pager" >
-
+        android:id="@+id/fragments"
+        android:background="@color/transparent">
     </android.support.v4.view.ViewPager>
 
 </LinearLayout>

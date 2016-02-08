@@ -80,17 +80,17 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     public void setStream(Stream stream, boolean isNew) {
 
+        if(stream==null) return;
+
         StreamingService.stream = stream;
-        if(stream!=null) {
-            if(isNew) {
-                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
-            }
-            else{
-                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
-            }
-            resetNotification();
-            downloadBitmapsInBg(stream);
+        if(isNew) {
+            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
         }
+        else{
+            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
+        }
+        resetNotification();
+        downloadBitmapsInBg(stream);
     }
 
 
@@ -135,7 +135,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     public void onCreate() {
         this.app = new App(getApplicationContext());
         isPlaying = false;
-        setStream(null);
         Log.e(Config.ERR_LOG_TAG, "one time setup");
         showNotification(); // show notification and show notification
         super.onCreate();

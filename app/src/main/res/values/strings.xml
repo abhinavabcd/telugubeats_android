@@ -7,4 +7,6 @@
     <string name="ga_trackingId">UA-18974618-3</string>
     <string name="talk_on_radio">Ever considered your stint to be an RJ? Want to talk to listeners about the new thing you bought or how a new place is like? Here\'s the button for it , just push and talk on your turn.         exciting features coming soon.</string>
     <string name="facebook_app_id">375538039158859</string>
+    <string name="title_activity_all_streams">AllStreams</string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>
