@@ -9,6 +9,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
+import com.appsandlabs.telugubeats.widgets.TapAHeart;
 
 /**
  * Created by abhinav on 2/6/16.
@@ -28,6 +29,9 @@ public class StreamAndEventsUiHolder {
     public LinearLayout visualizer;
     public Button playPauseButton;
         public LinearLayout currentSongHeader;
+
+    public TapAHeart tapAHeart;
+
 
 
     public EditText saySomethingText;
@@ -63,6 +67,9 @@ public class StreamAndEventsUiHolder {
         uiHandle.saySomethingText = (EditText)layout.findViewById(R.id.say_something_text);
         uiHandle.sayButton  = (Button)layout.findViewById(R.id.say_button);
         uiHandle.specialSongInfo = (LinearLayout)layout.findViewById(R.id.special_song_stream);
+
+        uiHandle.tapAHeart = (TapAHeart)layout.findViewById(R.id.tap_hearts);
+
         return uiHandle;
     }
 

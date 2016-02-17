@@ -2,7 +2,7 @@ package com.appsandlabs.telugubeats.models;
 
 import android.graphics.Bitmap;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -19,7 +19,9 @@ public class Stream extends BaseModel{
     int subscribers;
 
     @SerializedName("is_live")
-    int isLive ;
+    boolean isLive ;
+
+
     List<String> hosts;
 
     @SerializedName("is_special_song_stream")
@@ -37,6 +39,14 @@ public class Stream extends BaseModel{
     public
     String additionalInfo;
 
+
+
+    @SerializedName("heart_count")
+    public
+    int heartCount;
+
+
+    public User user;
 
 
     private Bitmap bitmap;
@@ -65,7 +75,7 @@ public class Stream extends BaseModel{
         if(bitmap==null) return null;
 
         this.bitmap = bitmap;
-        blurredImageBitmap = app.getUiUtils().fastblur(bitmap, 5, 40);
+        blurredImageBitmap = app.getUiUtils().fastblur(bitmap, 2, 10);
         return bitmap;
     }
 

@@ -49,8 +49,6 @@ repositories {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.google.code.gson:gson:2.2.4'
     compile files('libs/jl-dec-android.jar')
     compile files('libs/commons-io-2.4.jar')
     compile 'com.squareup.picasso:picasso:2.5.2'

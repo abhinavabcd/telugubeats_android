@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;

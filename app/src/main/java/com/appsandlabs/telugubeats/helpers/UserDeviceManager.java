@@ -1,4 +1,4 @@
-package com.appsandlabs.telugubeats;
+package com.appsandlabs.telugubeats.helpers;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -10,8 +10,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 
+import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.config.Config;
-import com.appsandlabs.telugubeats.helpers.UiUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

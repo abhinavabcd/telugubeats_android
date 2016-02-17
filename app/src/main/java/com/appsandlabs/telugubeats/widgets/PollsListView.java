@@ -11,9 +11,9 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.UiText;
+import com.appsandlabs.telugubeats.helpers.UiText;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.models.Poll;

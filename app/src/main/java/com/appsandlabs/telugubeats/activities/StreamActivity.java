@@ -11,9 +11,9 @@ import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.UserDeviceManager;
+import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
@@ -70,7 +70,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
                          addTabs(stream);
                      }
                  }
-                 else if(intent.getExtras().getBoolean(Constants.STEAM_BITMAPS_CHANGED)){
+                 if(intent.getExtras().getBoolean(Constants.STREAM_BITMAPS_CHANGED)){
                      if(stream.getBlurredImageBitmap()!=null){
                          //main activity //TODO: dirty fix
                          UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));

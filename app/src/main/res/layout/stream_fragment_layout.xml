@@ -35,7 +35,8 @@
             android:divider="@color/translucent_white"
             android:layout_height="0dp"
 
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:background="@color/translucent_black" />
     </LinearLayout>
 
 
@@ -57,6 +58,13 @@
             android:gravity="center_vertical"
             android:hint="Type something, let people know"
             />
+        <com.appsandlabs.telugubeats.widgets.TapAHeart
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/tap_hearts"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp" />
         <Button
             android:background="@drawable/red_button"
             android:id="@+id/say_button"

@@ -1,4 +1,4 @@
-package com.appsandlabs.telugubeats;
+package com.appsandlabs.telugubeats.helpers;
 
 import com.appsandlabs.telugubeats.models.StreamEvent;
 import com.appsandlabs.telugubeats.models.Poll;

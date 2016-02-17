@@ -18,7 +18,8 @@ public class StreamEvent extends BaseModel {
         NEW_POLL,
         POLLS_CHANGED,
         CHAT_MESSAGE,
-        DEDICATE;
+        DEDICATE,
+        HEARTS;
     }
 
     @SerializedName("stream_id")

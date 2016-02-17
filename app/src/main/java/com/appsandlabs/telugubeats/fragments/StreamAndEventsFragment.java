@@ -23,10 +23,10 @@ import android.widget.AbsListView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
-import com.appsandlabs.telugubeats.UiText;
+import com.appsandlabs.telugubeats.helpers.UiText;
 import com.appsandlabs.telugubeats.adapters.FeedViewAdapter;
 import com.appsandlabs.telugubeats.config.VisualizerConfig;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
@@ -82,7 +82,7 @@ public class StreamAndEventsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
         app = new App(this.getActivity());
-        layout = (ViewGroup) inflater.inflate(R.layout.events_fragment_layout, null);
+        layout = (ViewGroup) inflater.inflate(R.layout.stream_fragment_layout, null);
         uiHandle = StreamAndEventsUiHolder.getUiHandle(layout);
 
         addVisualizerView();
@@ -251,7 +251,7 @@ public class StreamAndEventsFragment extends Fragment {
         app.getServerCalls().getLastEvents(StreamingService.stream.streamId, 0, new GenericListener<List<StreamEvent>>() {
             @Override
             public void onData(List<StreamEvent> s) {
-                if(s==null) return;
+                if (s == null) return;
                 Stream stream = StreamingService.stream;
                 stream.setEvents(s);
                 if (s != null) {
@@ -268,6 +268,14 @@ public class StreamAndEventsFragment extends Fragment {
     }
 
     private void renderEvent(StreamEvent event, boolean refresh) {
+
+        if(event.eventId== StreamEvent.EventId.HEARTS){
+            int count = Integer.parseInt(event.data);
+
+            if(!event.fromUser.isSame(App.currentUser))
+                uiHandle.tapAHeart.floatHeart(count, false);
+        }
+
         if(event==null || !(event.eventId== StreamEvent.EventId.POLLS_CHANGED || event.eventId== StreamEvent.EventId.CHAT_MESSAGE || event.eventId == StreamEvent.EventId.DEDICATE))
                 return;
         feedAdapter.add(event);

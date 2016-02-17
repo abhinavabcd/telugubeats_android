@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import com.appsandlabs.telugubeats.App;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener4;

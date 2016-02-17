@@ -1,29 +1,23 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.appsandlabs.telugubeats.activities.MainActivity">
+    android:id="@+id/root_hearts"
+    tools:context="com.appsandlabs.telugubeats.activities.MainActivity"
+    >
 
-    <FrameLayout
-        android:id="@+id/tap_heart"
-        android:layout_width="match_parent"
-        android:layout_height="100dp">
+    <LinearLayout android:layout_width="match_parent"
+    android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:id="@+id/hearts_container_2"
+        >
 
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/heart_icon"
-            android:id="@+id/heart_icon"
-            android:layout_marginTop="200dp" />
+        <android.support.v4.view.ViewPager
+            android:layout_height="0dp"
+            android:layout_weight="1.0"
+            android:layout_width="match_parent"
+            android:id="@+id/fragments"
+            android:background="@color/transparent">
+        </android.support.v4.view.ViewPager>
 
-    </FrameLayout>
-
-    <android.support.v4.view.ViewPager
-        android:layout_height="0dp"
-        android:layout_weight="1.0"
-        android:layout_width="match_parent"
-        android:id="@+id/fragments"
-        android:background="@color/transparent">
-    </android.support.v4.view.ViewPager>
-
-</LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

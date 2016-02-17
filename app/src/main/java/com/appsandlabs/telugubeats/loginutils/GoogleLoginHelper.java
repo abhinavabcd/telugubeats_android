@@ -8,8 +8,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 
-import com.appsandlabs.telugubeats.App;
-import com.appsandlabs.telugubeats.UiText;
+import com.appsandlabs.telugubeats.helpers.App;
+import com.appsandlabs.telugubeats.helpers.UiText;
 import com.appsandlabs.telugubeats.activities.AppBaseFragmentActivity;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;

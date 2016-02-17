@@ -5,7 +5,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
 import com.appsandlabs.telugubeats.fragments.LiveStreamsFragment;
-import com.appsandlabs.telugubeats.fragments.UserStreamsFragment;
 
 public class MainStreamsFragments extends FragmentPagerAdapter {
 
@@ -18,11 +17,11 @@ public class MainStreamsFragments extends FragmentPagerAdapter {
         @Override
         public Fragment getItem(int position) {
             if (position == 0) {
-                LiveStreamsFragment liveStreamsFragment = LiveStreamsFragment.newInstance(null, null);
+                LiveStreamsFragment liveStreamsFragment = LiveStreamsFragment.newInstance("live_streams", null);
                 return liveStreamsFragment;
             }
             else if (position==1) {
-                UserStreamsFragment userStreamsFragment = UserStreamsFragment.newInstance(null, null);
+                LiveStreamsFragment userStreamsFragment = LiveStreamsFragment.newInstance("is_user", null);
                 return userStreamsFragment;
             }
             return null;

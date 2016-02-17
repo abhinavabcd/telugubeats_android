@@ -82,3 +82,44 @@ void Java_com_samsung_sample_lame4android_LameActivity_encodeFile(JNIEnv *env,
 	fclose(input_file);
 	fclose(output_file);
 }
+
+
+//live encode and return mp3 bytes
+void Java_com_samsung_sample_lame4android_LameActivity_encodeBytes(JNIEnv *env,
+																  jobject jobj, jstring in_source_path, jstring in_target_path) {
+
+
+
+
+	(*env)->GetMethodID
+
+	const char *source_path, *target_path;
+	source_path = (*env)->GetStringUTFChars(env, in_source_path, NULL);
+	target_path = (*env)->GetStringUTFChars(env, in_target_path, NULL);
+
+	FILE *input_file, *output_file;
+	input_file = fopen(source_path, "rb");
+	output_file = fopen(target_path, "wb");
+
+	short input[BUFFER_SIZE];
+	char output[BUFFER_SIZE];
+	int nb_read = 0;
+	int nb_write = 0;
+	int nb_total = 0;
+
+	LOGD("Encoding started");
+	while (nb_read = read_samples(input_file, input)) {
+		nb_write = lame_encode_buffer(lame, input, input, nb_read, output,
+									  BUFFER_SIZE);
+		fwrite(output, nb_write, 1, output_file);
+		nb_total += nb_write;
+	}
+	LOGD("Encoded %d bytes", nb_total);
+
+	nb_write = lame_encode_flush(lame, output, BUFFER_SIZE);
+	fwrite(output, nb_write, 1, output_file);
+	LOGD("Flushed %d bytes", nb_write);
+
+	fclose(input_file);
+	fclose(output_file);
+}

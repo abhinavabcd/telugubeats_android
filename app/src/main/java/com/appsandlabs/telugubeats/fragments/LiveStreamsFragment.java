@@ -1,6 +1,7 @@
 package com.appsandlabs.telugubeats.fragments;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -8,14 +9,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.fragments.dummy.DummyContent;
+import com.appsandlabs.telugubeats.activities.StreamActivity;
+import com.appsandlabs.telugubeats.adapters.StreamItemsAdapter;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
+import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.interfaces.OnFragmentInteractionListener;
+import com.appsandlabs.telugubeats.models.Stream;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A fragment representing a list of Items.
@@ -48,8 +55,10 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
      * The Adapter which will be used to populate the ListView/GridView with
      * Views.
      */
-    private ListAdapter mAdapter;
+    private StreamItemsAdapter mAdapter;
     private App app;
+    private List<Stream> streams= new ArrayList<>();
+    private int currentPage = 0;
 
     // TODO: Rename and change types of parameters
     public static LiveStreamsFragment newInstance(String param1, String param2) {
@@ -81,21 +90,33 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         app = new App(getActivity());
 
         // TODO: Change Adapter to display your content
-        mAdapter = new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
-                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS);
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_live_streams, container, false);
+        final View view = inflater.inflate(R.layout.fragment_live_streams, container, false);
 
         // Set the adapter
-        mListView = (AbsListView) view.findViewById(android.R.id.list);
-        ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
 
-        // Set OnItemClickListener so we can be notified on item clicks
-        mListView.setOnItemClickListener(this);
+
+
+        app.getServerCalls().getLiveAudioStreams(currentPage, new GenericListener<List<Stream>>() {
+
+            @Override
+            public void onData(List<Stream> streams) {
+                LiveStreamsFragment.this.streams = streams;
+                mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
+
+                mListView = (AbsListView) view.findViewById(android.R.id.list);
+                ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+
+                // Set OnItemClickListener so we can be notified on item clicks
+                mListView.setOnItemClickListener(LiveStreamsFragment.this);
+
+            }
+        });
 
         return view;
     }
@@ -122,7 +143,8 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(DummyContent.ITEMS.get(position).id);
+            mListener.onFragmentInteraction(streams.get(position).streamId);
+            startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
         }
     }
 

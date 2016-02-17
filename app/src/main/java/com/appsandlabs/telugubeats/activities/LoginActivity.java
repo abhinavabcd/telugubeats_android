@@ -5,11 +5,10 @@ import android.os.Bundle;
 import android.support.v4.content.IntentCompat;
 import android.view.View;
 
-import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.loginutils.FacebookLoginHelper;
 import com.appsandlabs.telugubeats.loginutils.GoogleLoginHelper;
 import com.appsandlabs.telugubeats.models.User;
@@ -46,7 +45,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
                             @Override
                             public void onData(User user) {
                                 app.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
-                                TeluguBeatsApp.currentUser = user;
+                                App.currentUser = user;
                                 goToMainActivity();
                             }
                         });
@@ -67,7 +66,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
                             @Override
                             public void onData(User user) {
                                 app.getUserDeviceManager().setPreference(Config.PREF_ENCODED_KEY, user.auth_key);
-                                TeluguBeatsApp.currentUser = user;
+                                App.currentUser = user;
                                 goToMainActivity();
                             }
                         });
@@ -81,7 +80,7 @@ public class LoginActivity extends AppBaseFragmentActivity {
     }
 
     private void goToMainActivity() {
-        Intent i = new Intent(LoginActivity.this, StreamActivity.class);
+        Intent i = new Intent(LoginActivity.this, MainActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | IntentCompat.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(i);
         finish();

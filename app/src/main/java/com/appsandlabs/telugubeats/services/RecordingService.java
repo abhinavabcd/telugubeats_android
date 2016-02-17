@@ -21,7 +21,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.activities.StreamActivity;
@@ -29,6 +28,7 @@ import com.appsandlabs.telugubeats.audiotools.FFT;
 import com.appsandlabs.telugubeats.audiotools.TByteArrayOutputStream;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
 import com.appsandlabs.telugubeats.models.Stream;
@@ -52,7 +52,7 @@ import javazoom.jl.decoder.SampleBuffer;
 /**
  * Created by abhinav on 9/21/15.
  */
-public class StreamingService extends Service implements AudioManager.OnAudioFocusChangeListener {
+public class RecordingService extends Service implements AudioManager.OnAudioFocusChangeListener {
 
 
     private MusicServiceBinder serviceBinder;
@@ -82,7 +82,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
         if(stream==null) return;
 
-        StreamingService.stream = stream;
+        RecordingService.stream = stream;
         if(isNew) {
             sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
         }
@@ -113,13 +113,13 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     //this is a dummy binder , will just use methods from the original service class only
     public static class MusicServiceBinder extends Binder {
-        private final StreamingService musicService;
+        private final RecordingService musicService;
 
-        public MusicServiceBinder(StreamingService service) {
+        public MusicServiceBinder(RecordingService service) {
             this.musicService = service;
         }
 
-        public StreamingService getService() {
+        public RecordingService getService() {
             // Return this instance of LocalService so clients can call public methods
             return musicService;
         }
@@ -153,26 +153,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
                 sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
             }
         }
-        else {
-
-            String action = intent.getAction();
-            if (action != null && action.equalsIgnoreCase(NOTIFY_PLAY)) {
-                if (stream != null && !isPlaying)
-                    playStream(stream.streamId);
-            }
-
-            if (action != null && action.equalsIgnoreCase(NOTIFY_PAUSE)) {
-                stopStream();
-            }
-            if (action != null && action.equalsIgnoreCase(NOTIFY_DELETE)) {
-                stopStream();
-                stopForeground(true);
-                stopSelf();
-            }
-            resetNotification();
-            Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
-        }
-
         return START_STICKY;
     }
 
@@ -247,7 +227,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     @Override
     public void onDestroy() {
-		Log.e(Config.ERR_LOG_TAG, "destroy");      
+		Log.e(Config.ERR_LOG_TAG, "destroy");
 		isPlaying = false;
         TeluguBeatsApp.sfd_ser = null;
         super.onDestroy();
@@ -259,10 +239,10 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     }
 
     public static class MusicPlayThread extends Thread {
-        private StreamingService musicService;
+        private RecordingService musicService;
 
 
-        MusicPlayThread(StreamingService service) {
+        MusicPlayThread(RecordingService service) {
             this.musicService = service;
         }
 
@@ -550,13 +530,13 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
      * @param view
      */
     public void setNotificationListeners(RemoteViews view) {
-        Intent delete = new Intent(getApplicationContext(), StreamingService.class);
+        Intent delete = new Intent(getApplicationContext(), RecordingService.class);
         delete.setAction(NOTIFY_DELETE);
 
-        Intent pause = new Intent(getApplicationContext(), StreamingService.class);
+        Intent pause = new Intent(getApplicationContext(), RecordingService.class);
         pause.setAction(NOTIFY_PAUSE);
 
-        Intent play = new Intent(getApplicationContext(), StreamingService.class);
+        Intent play = new Intent(getApplicationContext(), RecordingService.class);
         play.setAction(NOTIFY_PLAY);
 
         PendingIntent pDelete = PendingIntent.getService(getApplicationContext(), 0, delete, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -583,7 +563,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     // Honeycomb
     {
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             SERVICE_CMD = "com.android.music.musicservicecommand";
             PAUSE_SERVICE_CMD = "com.android.music.musicservicecommand.pause";
             PLAY_SERVICE_CMD = "com.android.music.musicservicecommand.play";
@@ -619,7 +599,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
                     forceMusicStop();
                     // 3. Register broadcast recetupBroadcastReceiver();
                 }
-                playingThread = new MusicPlayThread(StreamingService.this);
+                playingThread = new MusicPlayThread(RecordingService.this);
                 //downloads stream and starts playing mp3 music and keep updating polls
                 playingThread.start();
 

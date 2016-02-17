@@ -42,7 +42,6 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.appsandlabs.telugubeats.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;

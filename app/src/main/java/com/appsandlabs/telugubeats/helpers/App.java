@@ -1,11 +1,9 @@
-package com.appsandlabs.telugubeats;
+package com.appsandlabs.telugubeats.helpers;
 
 import android.content.Context;
 
 import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
-import com.appsandlabs.telugubeats.helpers.ServerCalls;
-import com.appsandlabs.telugubeats.helpers.UiUtils;
 import com.appsandlabs.telugubeats.models.User;
 
 /**
@@ -14,6 +12,7 @@ import com.appsandlabs.telugubeats.models.User;
 public class App {
 
 
+    public static User currentUser;
     public final Context context;
     ServerCalls serverCalls;
     UserDeviceManager userDeviceManager;
@@ -67,8 +66,8 @@ public class App {
 
 
     public void getCurrentUser(GenericListener<User> listener) {
-        if(TeluguBeatsApp.currentUser!=null){
-            listener.onData(TeluguBeatsApp.currentUser);
+        if(App.currentUser!=null){
+            listener.onData(App.currentUser);
         }
         else{
             getServerCalls().getCurrentUser(listener);

@@ -13,7 +13,7 @@
         android:id="@+id/current_song_header"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:background="@color/translucent_black"
+        android:background="@color/translucent_black_dark"
         >
 
         <LinearLayout

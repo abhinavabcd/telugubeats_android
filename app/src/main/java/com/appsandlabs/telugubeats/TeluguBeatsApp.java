@@ -39,7 +39,6 @@ public class TeluguBeatsApp extends Application {
 
 
 
-    public static User currentUser;
     private int applicationLaunchId;
 
     /**
