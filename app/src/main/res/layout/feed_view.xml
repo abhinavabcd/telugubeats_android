@@ -33,7 +33,8 @@
             android:paddingTop="4dp"
             android:textColor="@color/less_less_white"
             android:paddingLeft="5dp"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:enabled="false" />
         <TextView
             android:id="@+id/user_message"
             android:layout_width="match_parent"

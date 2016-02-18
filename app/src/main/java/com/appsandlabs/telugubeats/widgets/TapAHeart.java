@@ -142,8 +142,8 @@ public class TapAHeart extends ImageView implements View.OnClickListener {
             int distance = 300+random.nextInt(200);
             int numSteps = 3+random.nextInt(3);
             for(int i=0;i<numSteps;i++){
-                p.rLineTo(-50-random.nextInt(10),-distance/numSteps);
-                p.rLineTo(50+random.nextInt(50), -distance/numSteps);
+                p.rLineTo(-50-random.nextInt(100),-distance/numSteps);
+                p.rLineTo(50+random.nextInt(10), -distance/numSteps);
             }
             pm = new PathMeasure(p, false);
             setDuration(5000);

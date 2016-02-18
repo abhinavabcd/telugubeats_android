@@ -2,6 +2,7 @@ package com.appsandlabs.telugubeats.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
@@ -18,6 +19,7 @@ import com.appsandlabs.telugubeats.pageradapters.MainStreamsFragments;
 public class MainActivity extends AppBaseFragmentActivity implements OnFragmentInteractionListener {
 
     private ViewPager pages;
+    private TabLayout tabs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +37,9 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
                 setContentView(R.layout.activity_main);
                 pages = (ViewPager) findViewById(R.id.fragments);
                 pages.setAdapter(getPages());
+
+                tabs = (TabLayout)findViewById(R.id.tab_layout);
+                tabs.setupWithViewPager(pages);
 
             }
         });

@@ -38,11 +38,11 @@ void Java_com_appsandlabs_telugubeats_services_RecordingService_initEncoder(JNIE
 	lame_set_brate(lame, in_brate);
 	LOGD("Bitrate: %d", in_brate);
 
-	lame_set_mode(lame, in_mode);
-	LOGD("Mode: %d", in_mode);
+//	lame_set_mode(lame, in_mode);
+//	LOGD("Mode: %d", in_mode);
 
-	lame_set_quality(lame, in_quality);
-	LOGD("Quality: %d", in_quality);
+//	lame_set_quality(lame, in_quality);
+//	LOGD("Quality: %d", in_quality);
 
 	int res = lame_init_params(lame);
 	LOGD("Init returned: %d", res);
@@ -94,7 +94,7 @@ unsigned char output_buffer[BUFFER_SIZE];
 jbyteArray Java_com_appsandlabs_telugubeats_services_RecordingService_encodeToMp3Bytes(JNIEnv *env,
 																  jobject jobj, jshortArray samples , jint samples_length ) {
 
-	unsigned char *c_output = output_buffer; //reusing it
+	char *c_output = output_buffer; //reusing it
 	int nb_read = 0;
 	int nb_write = 0;
 	int nb_total = 0;
@@ -104,7 +104,7 @@ jbyteArray Java_com_appsandlabs_telugubeats_services_RecordingService_encodeToMp
 
 
 	LOGD("Encoding samples");
-	nb_write = lame_encode_buffer(lame, c_samples, NULL, samples_length, c_output,
+	nb_write = lame_encode_buffer(lame, c_samples,c_samples, samples_length, c_output,
 								  BUFFER_SIZE);
 	LOGD("Encoded %d bytes", nb_write);
 

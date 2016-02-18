@@ -18,6 +18,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.activities.StreamActivity;
@@ -28,6 +29,7 @@ import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.allsparkrt.AllSparkReq;
 import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.models.User;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -60,9 +62,6 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     private LinkedList<short[]> readSamples;
     private volatile EncoderThread encodingThread;
 
-    public static void setStream(Stream strea) {
-        RecordingService.stream = strea;
-    }
 
     public void setRecordingStream(Stream stream) {
 
@@ -119,9 +118,19 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                 //stopRecordingOldStream();
                 app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
                     @Override
-                    public void onData(Stream s) {
-                        RecordingService.setStream(s);
-                        continueStream(s);
+                    public void onData(final Stream s) {
+                        app.getCurrentUser(new GenericListener<User>() {
+                            @Override
+                            public void onData(User user) {
+                                if (s != null && !s.isSpecialSongStream && user.isSame(s.user) && !s.isLive){
+                                    setRecordingStream(s);
+                                    continueStream(s);
+                                }
+                                else{
+                                    Toast.makeText(getApplicationContext(), "Some error has occured , the stream is already live or you don't own the stream." , Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        });
                     }
                 });
             }

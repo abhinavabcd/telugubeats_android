@@ -20,6 +20,7 @@ public class Stream extends BaseModel{
     int subscribers;
 
     @SerializedName("is_live")
+    public
     boolean isLive ;
 
 

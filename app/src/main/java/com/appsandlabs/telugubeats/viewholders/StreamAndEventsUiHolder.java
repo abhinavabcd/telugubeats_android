@@ -17,7 +17,7 @@ import com.appsandlabs.telugubeats.widgets.TapAHeart;
 public class StreamAndEventsUiHolder {
 
     public View mainLayout;
-    public   LinearLayout headerLayout;
+//    public   LinearLayout headerLayout;
 
     public         TextView streamAndTitle;
     public         TextView musicDirectors;
@@ -55,15 +55,17 @@ public class StreamAndEventsUiHolder {
         uiHandle.actors = (TextView)layout.findViewById(R.id.actors);
         uiHandle.directors = (TextView)layout.findViewById(R.id.directors);
         uiHandle.singers = (TextView)layout.findViewById(R.id.singers);
-        uiHandle.liveUsers = (TextView)layout.findViewById(R.id.live_users);
+        uiHandle.liveUsers = (TextView)layout.findViewById(R.id.live_user_name);
         uiHandle.whatsAppDedicate = (LinearLayout)layout.findViewById(R.id.whats_app_dedicate);
         uiHandle.visualizer = (LinearLayout)layout.findViewById(R.id.visualizer);
         uiHandle.playPauseButton = (Button)layout.findViewById(R.id.play_pause_button);
 
-        uiHandle.headerLayout = (LinearLayout)layout.findViewById(R.id.header);
+//        uiHandle.headerLayout = (LinearLayout)layout.findViewById(R.id.header);
         uiHandle.currentSongHeader = (LinearLayout)layout.findViewById(R.id.current_song_header);
         //takes care of creating and adding event listeners from onPause and onResume
         uiHandle.telugubeatsEvents = (ListView)layout.findViewById(R.id.scrolling_dedications);
+        uiHandle.telugubeatsEvents.setDivider(null);
+
         uiHandle.saySomethingText = (EditText)layout.findViewById(R.id.say_something_text);
         uiHandle.sayButton  = (Button)layout.findViewById(R.id.say_button);
         uiHandle.specialSongInfo = (LinearLayout)layout.findViewById(R.id.special_song_stream);

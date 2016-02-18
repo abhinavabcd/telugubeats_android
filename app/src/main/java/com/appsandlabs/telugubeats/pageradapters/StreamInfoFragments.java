@@ -53,4 +53,6 @@ public class StreamInfoFragments extends FragmentPagerAdapter {
             }
             return null;
         }
+
+
     }

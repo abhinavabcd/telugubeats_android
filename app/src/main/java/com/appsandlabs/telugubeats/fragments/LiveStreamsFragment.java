@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
@@ -112,6 +113,8 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
                 mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
 
                 mListView = (AbsListView) view.findViewById(android.R.id.list);
+                if(mListView instanceof ListView)
+                    ((ListView)mListView).setDivider(null);
                 ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
 
                 // Set OnItemClickListener so we can be notified on item clicks

@@ -37,9 +37,9 @@ public class MainStreamsFragments extends FragmentPagerAdapter {
         public CharSequence getPageTitle(int position) {
             switch(position){
                 case 0:
-                    return "Talkies";
+                    return "Live Talkies";
                 case 1:
-                    return "Your Talkies";
+                    return "Your Broadcasts";
             }
             return null;
         }
