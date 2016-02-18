@@ -23,7 +23,7 @@ int read_samples(FILE *input_file, short *input) {
 	return nb_read;
 }
 
-void Java_com_samsung_sample_lame4android_LameActivity_initEncoder(JNIEnv *env,
+void Java_com_appsandlabs_telugubeats_services_RecordingService_initEncoder(JNIEnv *env,
 		jobject jobj, jint in_num_channels, jint in_samplerate, jint in_brate,
 		jint in_mode, jint in_quality) {
 	lame = lame_init();
@@ -44,13 +44,13 @@ void Java_com_samsung_sample_lame4android_LameActivity_initEncoder(JNIEnv *env,
 	LOGD("Init returned: %d", res);
 }
 
-void Java_com_samsung_sample_lame4android_LameActivity_destroyEncoder(
+void Java_com_appsandlabs_telugubeats_services_RecordingService_destroyEncoder(
 		JNIEnv *env, jobject jobj) {
 	int res = lame_close(lame);
 	LOGD("Deinit returned: %d", res);
 }
 
-void Java_com_samsung_sample_lame4android_LameActivity_encodeFile(JNIEnv *env,
+void Java_com_appsandlabs_telugubeats_services_RecordingService_encodeFile(JNIEnv *env,
 		jobject jobj, jstring in_source_path, jstring in_target_path) {
 	const char *source_path, *target_path;
 	source_path = (*env)->GetStringUTFChars(env, in_source_path, NULL);
@@ -85,41 +85,32 @@ void Java_com_samsung_sample_lame4android_LameActivity_encodeFile(JNIEnv *env,
 
 
 //live encode and return mp3 bytes
-void Java_com_samsung_sample_lame4android_LameActivity_encodeBytes(JNIEnv *env,
-																  jobject jobj, jstring in_source_path, jstring in_target_path) {
+char output_buffer[BUFFER_SIZE];
 
+jbyteArray Java_com_appsandlabs_telugubeats_services_RecordingService_encodeToMp3Bytes(JNIEnv *env,
+																  jobject jobj, jshortArray samples , jint samples_length ) {
 
-
-
-	(*env)->GetMethodID
-
-	const char *source_path, *target_path;
-	source_path = (*env)->GetStringUTFChars(env, in_source_path, NULL);
-	target_path = (*env)->GetStringUTFChars(env, in_target_path, NULL);
-
-	FILE *input_file, *output_file;
-	input_file = fopen(source_path, "rb");
-	output_file = fopen(target_path, "wb");
-
-	short input[BUFFER_SIZE];
-	char output[BUFFER_SIZE];
+	char *c_output = output_buffer; //reusing it
 	int nb_read = 0;
 	int nb_write = 0;
 	int nb_total = 0;
 
-	LOGD("Encoding started");
-	while (nb_read = read_samples(input_file, input)) {
-		nb_write = lame_encode_buffer(lame, input, input, nb_read, output,
-									  BUFFER_SIZE);
-		fwrite(output, nb_write, 1, output_file);
-		nb_total += nb_write;
+	jshort *c_samples = (*env)->GetShortArrayElements(env, samples, NULL);
+	int i;
+	for(i=0;i<samples_length;i++){
+		c_samples[i] = be_short(c_samples[i]);
 	}
-	LOGD("Encoded %d bytes", nb_total);
+	//
 
-	nb_write = lame_encode_flush(lame, output, BUFFER_SIZE);
-	fwrite(output, nb_write, 1, output_file);
-	LOGD("Flushed %d bytes", nb_write);
+	LOGD("Encoding samples");
+	nb_write = lame_encode_buffer(lame, c_samples, c_samples, samples_length, c_output,
+								  BUFFER_SIZE);
+	LOGD("Encoded %d bytes", nb_write);
 
-	fclose(input_file);
-	fclose(output_file);
+	nb_write += lame_encode_flush(lame, c_output+nb_write, BUFFER_SIZE);
+
+	jbyteArray ret = (*env)->NewByteArray(env, nb_write);
+	(*env)->SetByteArrayRegion(env,ret,0,nb_write, (jbyte*)c_output);
+
+	return ret;
 }

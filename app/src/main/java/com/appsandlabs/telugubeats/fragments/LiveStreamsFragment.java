@@ -13,13 +13,13 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.adapters.StreamItemsAdapter;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.interfaces.OnFragmentInteractionListener;
 import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.services.RecordingService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +89,7 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
 
         app = new App(getActivity());
 
+
         // TODO: Change Adapter to display your content
 
     }
@@ -144,7 +145,10 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
             mListener.onFragmentInteraction(streams.get(position).streamId);
-            startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
+            if(mParam1!=null && mParam1.equalsIgnoreCase("is_user")){
+                getActivity().startService(new Intent(getActivity(), RecordingService.class).setAction(RecordingService.NOTIFY_RECORD).putExtra(Constants.STREAM_ID, "audio_1"));
+            }
+//            startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
         }
     }
 

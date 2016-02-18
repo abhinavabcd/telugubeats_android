@@ -7,10 +7,10 @@ import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
+import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.interfaces.OnFragmentInteractionListener;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.pageradapters.MainStreamsFragments;
@@ -28,15 +28,19 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
             @Override
             public void onData(User s) {
 
-                if(s==null){
+                if (s == null) {
                     startActivity(new Intent(MainActivity.this, LoginActivity.class));
                     return;
                 }
                 setContentView(R.layout.activity_main);
                 pages = (ViewPager) findViewById(R.id.fragments);
                 pages.setAdapter(getPages());
+
             }
         });
+
+
+
     }
 
    private PagerAdapter getPages() {

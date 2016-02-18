@@ -5,14 +5,13 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.os.Binder;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -22,81 +21,59 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.TeluguBeatsApp;
 import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.audiotools.FFT;
-import com.appsandlabs.telugubeats.audiotools.TByteArrayOutputStream;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
-import com.appsandlabs.telugubeats.helpers.ServerCalls;
+import com.appsandlabs.telugubeats.helpers.allsparkrt.AllSparkReq;
 import com.appsandlabs.telugubeats.models.Stream;
 import com.google.gson.Gson;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import javazoom.jl.decoder.Bitstream;
-import javazoom.jl.decoder.BitstreamException;
-import javazoom.jl.decoder.Decoder;
-import javazoom.jl.decoder.DecoderException;
-import javazoom.jl.decoder.Header;
-import javazoom.jl.decoder.SampleBuffer;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * Created by abhinav on 9/21/15.
  */
-public class RecordingService extends Service implements AudioManager.OnAudioFocusChangeListener {
+public class RecordingService extends Service{//} implements AudioManager.OnAudioFocusChangeListener {
 
 
-    private MusicServiceBinder serviceBinder;
-    private MusicPlayThread playingThread;
+    private RecordingThread recordingThread;
 
     public static final int FFT_N_SAMPLES = 2 * 1024;
     private FFT leftFft = new FFT(FFT_N_SAMPLES, 44100);
     private FFT rightFft = new FFT(FFT_N_SAMPLES, 44100);
 
 
-    public static final String NOTIFY_DELETE = "com.chaicafe.delete";
-    public static final String NOTIFY_PAUSE = "com.chaicafe.pause";
-    public static final String NOTIFY_PLAY = "com.chaicafe.play";
-    private AudioManager systemAudioService;
-    private BroadcastReceiver musicCommandReceiver;
-    private boolean mReceiverRegistered = false;
-    private boolean audioFocus;
+    public static final String NOTIFY_DELETE = "com.chaicafe.record.delete";
+    public static final String NOTIFY_PAUSE = "com.chaicafe.record.pause";
+    public static final String NOTIFY_RECORD = "com.chaicafe.record.continue";
     private App app;
     public static Stream stream;
     private RemoteViews simpleContentView;
-    private RemoteViews expandedView;
     private NotificationCompat.Builder notificationBuilder;
     private NotificationManager mNotificationManager;
     private Gson gson = new Gson();
+    private LinkedList<short[]> readSamples;
+    private EncoderThread encodingThread;
 
-    public void setStream(Stream stream, boolean isNew) {
+    public static void setStream(Stream strea) {
+        RecordingService.stream = strea;
+    }
+
+    public void setRecordingStream(Stream stream) {
 
         if(stream==null) return;
-
         RecordingService.stream = stream;
-        if(isNew) {
-            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
-        }
-        else{
-            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
-        }
         resetNotification();
         downloadBitmapsInBg(stream);
     }
 
 
-    private void setStream(Stream stream) {
-        setStream(stream , true);
-    }
 
     private void downloadBitmapsInBg(final Stream stream) {
         if(stream==null) return;
@@ -111,19 +88,6 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
     }
 
 
-    //this is a dummy binder , will just use methods from the original service class only
-    public static class MusicServiceBinder extends Binder {
-        private final RecordingService musicService;
-
-        public MusicServiceBinder(RecordingService service) {
-            this.musicService = service;
-        }
-
-        public RecordingService getService() {
-            // Return this instance of LocalService so clients can call public methods
-            return musicService;
-        }
-    }
 
     // no binding at the moment
     public IBinder onBind(Intent arg0) {
@@ -134,7 +98,7 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
     @Override
     public void onCreate() {
         this.app = new App(getApplicationContext());
-        isPlaying = false;
+        isRecoding = false;
         Log.e(Config.ERR_LOG_TAG, "one time setup");
         showNotification(); // show notification and show notification
         super.onCreate();
@@ -143,93 +107,148 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent==null) return START_STICKY;
         Bundle extras = intent.getExtras();
-        String streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
 
-        if(streamId!=null){
-            if(stream==null || !stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
-                playStream(streamId);
+        String action = intent.getAction();
+        if(action==null) return START_STICKY;
+        String streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
+        if(action.equalsIgnoreCase(NOTIFY_RECORD)){
+            //if stream already exists , simpley push the data
+            if(stream!=null && stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
+                continueStream(stream);
             }
             else{
-                sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+                //stopRecordingOldStream();
+                app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
+                    @Override
+                    public void onData(Stream s) {
+                        RecordingService.setStream(s);
+                        continueStream(s);
+                    }
+                });
             }
         }
         return START_STICKY;
     }
 
 
-    private boolean requestAudioFocus() {
-        AudioManager systemAudioManager = (AudioManager) getApplicationContext()
-                .getSystemService(Context.AUDIO_SERVICE);
-        // Request audio focus for play back
-        int result = systemAudioManager.requestAudioFocus(this,
-                // Use the music stream.
-                AudioManager.STREAM_MUSIC,
-                // Request permanent focus.
-                AudioManager.AUDIOFOCUS_GAIN);
-
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            return audioFocus=true;
-        } else {
-            // FAILED
-            Log.e(Config.ERR_LOG_TAG, "failed to get audio focus");
-        }
-        return audioFocus=false;
-    }
-
-    private boolean abandonAudioFocus() {
-        AudioManager systemAudioManager = (AudioManager) getApplicationContext()
-                .getSystemService(Context.AUDIO_SERVICE);
-        int result = systemAudioManager.abandonAudioFocus(this);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            return true;
-        } else {
-            // FAILED
-            Log.e(Config.ERR_LOG_TAG,
-                    "failed to abandom audio focus");
-        }
-        return false;
+    public int continueStream(Stream stream){
+        recordingThread = new RecordingThread(this);
+        encodingThread = new EncoderThread(this);
+        recordingThread.start();
+        encodingThread.start();
+        return 0;
     }
 
 
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-        switch (focusChange) {
-            case AudioManager.AUDIOFOCUS_GAIN:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN");
-                if(stream!=null)
-                    playStream(stream.streamId);
-                break;
-            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT");
-                break;
-            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK");
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS");
-				isPlaying = false;
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
-				isPlaying = false;
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
-                break;
-            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
-                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_REQUEST_FAILED");
-                break;
-            default:
-                //
+    /*
+       Recording...
+     */
+    public static int NUM_CHANNELS = 1;
+    public static int SAMPLE_RATE = 16000;
+    public static int BITRATE = 128;
+    public static int MONO_OR_STEREO = -1;
+    public static int CHANNEL_ENCODING_8_16_BIT = -1;
+    public static final int MODE = 1;
+    public static final int QUALITY = 2;
+    private AudioRecord mRecorder;
+    private short[] mBuffer;
+    private final String startRecordingLabel = "Start recording";
+    private final String stopRecordingLabel = "Stop recording";
+
+
+
+
+
+    private static int[] mSampleRates = new int[] {  44100, 22050, 11025, 8000   };
+    private static int [] aformats = new int[] { AudioFormat.ENCODING_PCM_8BIT, AudioFormat.ENCODING_PCM_16BIT };
+    private static int [] chConfigs = new int[] { AudioFormat.CHANNEL_IN_MONO, AudioFormat.CHANNEL_IN_STEREO };
+
+
+    public AudioRecord findAudioRecord() {
+        for (int rate : mSampleRates) {
+            for (int audioFormat : aformats) {
+                for (int channelConfig : chConfigs) {
+                    try {
+                        Log.d("Log:", "Attempting rate " + rate + "Hz, bits: " + audioFormat + ", channel: "
+                                + channelConfig);
+                        int bufferSize = AudioRecord.getMinBufferSize(rate, channelConfig, audioFormat);
+
+                        if (bufferSize != AudioRecord.ERROR_BAD_VALUE) {
+                            // check if we can instantiate and have a success
+                            AudioRecord recorder = new AudioRecord(android.media.MediaRecorder.AudioSource.MIC, rate, channelConfig, audioFormat, java.lang.Math.max(bufferSize,1024*800));
+
+                            if (recorder.getState() == AudioRecord.STATE_INITIALIZED){
+                                SAMPLE_RATE = rate;
+                                MONO_OR_STEREO = channelConfig;
+                                CHANNEL_ENCODING_8_16_BIT = audioFormat;
+                                return recorder;
+                            }
+
+                        }
+                    } catch (Exception e) {
+                        Log.e("Log:", rate + "Exception, keep trying.",e);
+                    }
+                }
+            }
         }
+        return null;
     }
+
+    private void initRecorder() {
+
+        mRecorder = findAudioRecord();
+
+        int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, MONO_OR_STEREO,
+                CHANNEL_ENCODING_8_16_BIT);
+        if(bufferSize<0){
+            mRecorder.stop();
+            mRecorder.release();
+            initRecorder();
+            return;
+        }
+        mBuffer = new short[bufferSize];
+        readSamples = new LinkedList<>();
+    }
+
+//
+//    @Override
+//    public void onAudioFocusChange(int focusChange) {
+//        switch (focusChange) {
+//            case AudioManager.AUDIOFOCUS_GAIN:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN");
+//                if(stream!=null)
+//                    playStream(stream.streamId);
+//                break;
+//            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT");
+//                break;
+//            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK");
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS");
+//				isRecoding = false;
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+//				isRecoding = false;
+//                break;
+//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+//                break;
+//            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+//                Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_REQUEST_FAILED");
+//                break;
+//            default:
+//                //
+//        }
+//    }
 
 
     @Override
     public void onDestroy() {
 		Log.e(Config.ERR_LOG_TAG, "destroy");
-		isPlaying = false;
-        TeluguBeatsApp.sfd_ser = null;
+		isRecoding = false;
         super.onDestroy();
     }
 
@@ -238,149 +257,95 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
         super.onLowMemory();
     }
 
-    public static class MusicPlayThread extends Thread {
+
+    static {
+        System.loadLibrary("mp3lame");
+    }
+
+
+    private native void initEncoder(int numChannels, int sampleRate, int bitRate, int mode, int quality);
+    private native void destroyEncoder();
+    private native byte[] encodeToMp3Bytes(short[] samples , int size);
+
+
+    public static class RecordingThread extends Thread {
         private RecordingService musicService;
 
-
-        MusicPlayThread(RecordingService service) {
+        RecordingThread(RecordingService service) {
             this.musicService = service;
+            if(musicService.mRecorder==null)
+                musicService.initRecorder();
+            if(musicService.mRecorder.getRecordingState()!=AudioRecord.RECORDSTATE_RECORDING){
+                musicService.mRecorder.startRecording(); // you can now get samples
+            }
         }
-
-
 
         @Override
         public void run() {
-            try {
-                URL url = new URL(ServerCalls.SERVER_ADDR + "/listen_audio_stream/" + musicService.stream.streamId );
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                musicService.decode(con.getInputStream());
-            } catch (IOException | DecoderException e) {
-                Log.e(Config.ERR_LOG_TAG, "some error in thread");
-                e.printStackTrace();
-                //loop again from beginning getting headers and stuff
-            }
-        }
-
-        public void restartStream(String streamId) {
-            musicService.stopStream();
-            start();
-        }
-    }
-
-
-    boolean isPlaying = false;
-    private float[] fftArrayLeft;
-    private float[] fftArrayRight;
-
-    private String streamInfoBytes = null;
-
-
-    public void decode(InputStream stream)
-            throws IOException, DecoderException {
-        TByteArrayOutputStream audioLeft = new TByteArrayOutputStream(FFT_N_SAMPLES);
-        TByteArrayOutputStream audioRight = new TByteArrayOutputStream(FFT_N_SAMPLES);
-
-        float totalMs = 0;
-        boolean seeking = true;
-        int frames = 0;
-
-        int bufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
-
-        track.play();
-        InputStream inputStream = new BufferedInputStream(stream, 16 * FFT_N_SAMPLES);
-
-        fftArrayLeft = new float[leftFft.specSize()];
-        fftArrayRight = new float[rightFft.specSize()];
-
-
-        try {
-            Bitstream bitstream = new Bitstream(inputStream);
-            Decoder decoder = new Decoder();
-            isPlaying = true;
-
-            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
-            resetNotification();
-
-            while (isPlaying) {
-                Header frameHeader = bitstream.readFrame();
-                if (frameHeader == null) {
-                    throw (new IOException());
-                } else {
-                    //Log.d(Config.ERR_LOG_TAG, DebugUtils.intToString(frameHeader.getSyncHeader() , 4 ));
-                    if (((frameHeader.getSyncHeader() >> 8) & 0x1) == 1) {//private bit
-                        //single stream has ended
-                        // you may start new frames
-                        Log.d(Config.ERR_LOG_TAG, "music service : reload song info");
-                        if (streamInfoBytes == null) {
-                            streamInfoBytes = new String(bitstream.getFrameBytes(), 0, 414);
-                        } else {
-                            streamInfoBytes += new String(bitstream.getFrameBytes(), 0, 414);
-                        }
-                        streamInfoBytes += "";
-
-                        bitstream.closeFrame();
-                        continue;
+                musicService.isRecoding = true;
+                while (musicService.isRecoding) {
+                    int readSize = musicService.mRecorder.read(musicService.mBuffer, 0, musicService.mBuffer.length);
+                    musicService.readSamples.add(Arrays.copyOfRange(musicService.mBuffer, 0, readSize));
+                    if(musicService.encodingThread.isAlive()){
+                        break;
                     }
-
-                    if (streamInfoBytes != null) {
-                        Log.d(Config.ERR_LOG_TAG, streamInfoBytes);
-                        //Log.d(Config.ERR_LOG_TAG, streamInfoBytes);
-                        setStream(gson.fromJson(streamInfoBytes.replace('\0', ' '), Stream.class), false);
-
-                        streamInfoBytes = null;
-                    }
-                    totalMs += frameHeader.ms_per_frame();
-
-                    SampleBuffer output = (SampleBuffer) decoder.decodeFrame(frameHeader, bitstream);
-
-                    if (output.getSampleFrequency() != 44100
-                            || output.getChannelCount() != 2) {
-                        throw new DecoderException("mono or non-44100 MP3 not supported", null);
-                    }
-
-                    short[] pcm = output.getBuffer();
-                    if (frames > 2) {
-                        frames = 0;
-                        audioLeft.reset();
-                        audioRight.reset();
-                        if (TeluguBeatsApp.onFFTData != null) {
-                            leftFft.forward(audioLeft.getBuffer());
-                            for (int i = 0; i < leftFft.specSize(); i++) {
-                                fftArrayLeft[i] = leftFft.getBand(i);
-                            }
-
-                            rightFft.forward(audioRight.getBuffer());
-                            for (int i = 0; i < rightFft.specSize(); i++) {
-                                fftArrayRight[i] = rightFft.getBand(i);
-                            }
-                            TeluguBeatsApp.onFFTData.onData(fftArrayLeft, fftArrayRight);
-                        }
-                    }
-                    for (short s : pcm) {
-                        audioLeft.write(s & 0xff);
-                        audioRight.write((s >> 8) & 0xff);
-                    }
-                    frames += 1;
-                    track.write(pcm, 0, pcm.length);
-
                 }
-                bitstream.closeFrame();
-            }
+                musicService.isRecoding = false;
 
-            return;
-        } catch (BitstreamException e) {
-            throw new IOException("Bitstream error: " + e);
-        } catch (DecoderException e) {
-            Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
-            throw new DecoderException("Decoder error", e);
-        } catch (Exception e) {
-            Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
-        }
-        finally {
-            IOUtils.closeQuietly(inputStream);
         }
     }
+
+    public static class EncoderThread extends Thread {
+        private RecordingService musicService;
+
+        public EncoderThread(RecordingService service) {
+            this.musicService = service;
+            musicService.initEncoder(NUM_CHANNELS, SAMPLE_RATE, BITRATE, MODE, QUALITY); // initialize an mp3 encoder
+            //init allspark
+        }
+
+        @Override
+        public void run() {
+            AllSparkReq req ;
+            try {
+                req = AllSparkReq.initRequest(musicService.stream.getSourceHost() + "?auth_key=" + musicService.app.getUserDeviceManager().getAuthKey());
+            } catch (URISyntaxException | IOException e) {
+                e.printStackTrace();
+                return;
+            }
+            int numSamplesFlushed = 0;
+
+            while (musicService.isRecoding) {
+                if(musicService.readSamples!=null && musicService.readSamples.size()>0) {
+                    short[] samples = musicService.readSamples.pollFirst();
+                    //call lame encoder and dump data into another list
+                    try {
+                        req.getOutputStream().write(musicService.encodeToMp3Bytes(samples, samples.length));
+                        if((numSamplesFlushed+=samples.length) > 1500){
+                            numSamplesFlushed = 0;
+                            req.getOutputStream().flush();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+                else{
+                    try {
+                        sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        }
+    }
+
+
+
+
+    boolean isRecoding = false;
 
 
 
@@ -402,20 +367,19 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        simpleContentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_notification);
-        expandedView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.big_notification);
+        simpleContentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_recording_notification);
 
 
         if(!showDeleteButton) {
             simpleContentView.setViewVisibility(R.id.btnDelete, View.GONE);
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnDelete, View.GONE);
-
-            }
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnDelete, View.GONE);
+//
+//            }
         }
 
         setNotificationListeners(simpleContentView);
-        setNotificationListeners(expandedView);
+//        setNotificationListeners(expandedView);
 
 
 
@@ -435,7 +399,7 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
 
         notification.contentView = simpleContentView;
         if (currentVersionSupportBigNotification) {
-            notification.bigContentView = expandedView;
+//            notification.bigContentView = expandedView;
         }
 
 
@@ -454,9 +418,9 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
         Notification notification = notificationBuilder.build();
 
         notification.contentView = simpleContentView;
-        if (currentVersionSupportBigNotification) {
-            notification.bigContentView = expandedView;
-        }
+//        if (currentVersionSupportBigNotification) {
+//            notification.bigContentView = expandedView;
+//        }
 
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
@@ -468,32 +432,32 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
         if(stream==null) return;
         simpleContentView.setTextViewText(R.id.title, stream.title);
         simpleContentView.setTextViewText(R.id.subtitle, stream.getSubTitle());
-        if (currentVersionSupportBigNotification) {
-            expandedView.setTextViewText(R.id.title, stream.title);
-            expandedView.setTextViewText(R.id.subtitle, stream.getSubTitle());
-        }
+//        if (currentVersionSupportBigNotification) {
+//            expandedView.setTextViewText(R.id.title, stream.title);
+//            expandedView.setTextViewText(R.id.subtitle, stream.getSubTitle());
+//        }
         refreshNotification();
     }
 
 
 
     private void resetNotificationPlayPause() {
-        if (!isPlaying) {
+        if (!isRecoding) {
             simpleContentView.setViewVisibility(R.id.btnPause, View.GONE);
             simpleContentView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
 
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnPause, View.GONE);
-                expandedView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
-            }
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnPause, View.GONE);
+//                expandedView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
+//            }
         } else {
             simpleContentView.setViewVisibility(R.id.btnPause, View.VISIBLE);
             simpleContentView.setViewVisibility(R.id.btnPlay, View.GONE);
-
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnPause, View.VISIBLE);
-                expandedView.setViewVisibility(R.id.btnPlay, View.GONE);
-            }
+//
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnPause, View.VISIBLE);
+//                expandedView.setViewVisibility(R.id.btnPlay, View.GONE);
+//            }
         }
         refreshNotification();
     }
@@ -505,9 +469,9 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
                 @Override
                 public void onData(Bitmap s) {
                     simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
-                    if (currentVersionSupportBigNotification) {
-                        expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
-                    }
+//                    if (currentVersionSupportBigNotification) {
+//                        expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
+//                    }
                     refreshNotification();
                 }
             });
@@ -537,7 +501,7 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
         pause.setAction(NOTIFY_PAUSE);
 
         Intent play = new Intent(getApplicationContext(), RecordingService.class);
-        play.setAction(NOTIFY_PLAY);
+        play.setAction(NOTIFY_RECORD);
 
         PendingIntent pDelete = PendingIntent.getService(getApplicationContext(), 0, delete, PendingIntent.FLAG_UPDATE_CURRENT);
         view.setOnClickPendingIntent(R.id.btnDelete, pDelete);
@@ -580,43 +544,47 @@ public class RecordingService extends Service implements AudioManager.OnAudioFoc
     }
 
     final Object sync = new Object();
-    private boolean playStream(String streamId) {
+//    private boolean playStream(String streamId) {
+//
+//        if(isRecoding && (recordingThread !=null && recordingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
+//            return false;
+//        }
+//
+//        app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
+//            @Override
+//            public void onData(Stream s) {
+//                if (s == null) {
+//                    isRecoding = false;
+//                    return;
+//                }
+//                setRecordingStream(s);
+//                if (requestAudioFocus()) {
+//                    // 2. Kill off any other play back sources
+//                    forceMusicStop();
+//                    // 3. Register broadcast recetupBroadcastReceiver();
+//                }
+//                recordingThread = new RecordingThread(RecordingService.this);
+//                //downloads stream and starts playing mp3 music and keep updating polls
+//                recordingThread.start();
+//
+//            }
+//
+//        });
+//        return true;
+//    }
 
-        if(isPlaying && (playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
-            return false;
-        }
-
-        app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
-            @Override
-            public void onData(Stream s) {
-                if (s == null) {
-                    isPlaying = false;
-                    return;
-                }
-                setStream(s);
-                if (requestAudioFocus()) {
-                    // 2. Kill off any other play back sources
-                    forceMusicStop();
-                    // 3. Register broadcast recetupBroadcastReceiver();
-                }
-                playingThread = new MusicPlayThread(RecordingService.this);
-                //downloads stream and starts playing mp3 music and keep updating polls
-                playingThread.start();
-
-            }
-
-        });
-        return true;
-    }
-
-    private void stopStream(){
-        isPlaying = false;
+    private void stopRecording(){
+        isRecoding = false;
         sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STOPPED, true));
         try {
-            if(playingThread!=null)
-                playingThread.join();
-            playingThread = null;
-            abandonAudioFocus();
+            if(recordingThread !=null)
+                recordingThread.join();
+            recordingThread = null;
+
+            if(encodingThread!=null)
+                encodingThread.join();
+            encodingThread = null;
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
