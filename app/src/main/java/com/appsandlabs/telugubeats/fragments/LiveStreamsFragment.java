@@ -13,6 +13,7 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
+import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.adapters.StreamItemsAdapter;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.App;
@@ -148,7 +149,9 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
             if(mParam1!=null && mParam1.equalsIgnoreCase("is_user")){
                 getActivity().startService(new Intent(getActivity(), RecordingService.class).setAction(RecordingService.NOTIFY_RECORD).putExtra(Constants.STREAM_ID, "audio_1"));
             }
-//            startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
+            else {
+                startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
+            }
         }
     }
 

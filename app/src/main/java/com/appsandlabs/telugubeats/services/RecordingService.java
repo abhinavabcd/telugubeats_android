@@ -11,7 +11,6 @@ import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -42,7 +41,7 @@ import java.util.LinkedList;
 public class RecordingService extends Service{//} implements AudioManager.OnAudioFocusChangeListener {
 
 
-    private RecordingThread recordingThread;
+    private volatile RecordingThread recordingThread;
 
     public static final int FFT_N_SAMPLES = 2 * 1024;
     private FFT leftFft = new FFT(FFT_N_SAMPLES, 44100);
@@ -59,7 +58,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     private NotificationManager mNotificationManager;
     private Gson gson = new Gson();
     private LinkedList<short[]> readSamples;
-    private EncoderThread encodingThread;
+    private volatile EncoderThread encodingThread;
 
     public static void setStream(Stream strea) {
         RecordingService.stream = strea;
@@ -134,6 +133,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     public int continueStream(Stream stream){
         recordingThread = new RecordingThread(this);
         encodingThread = new EncoderThread(this);
+
+        isRecoding = true;
         recordingThread.start();
         encodingThread.start();
         return 0;
@@ -143,13 +144,17 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     /*
        Recording...
      */
-    public static int NUM_CHANNELS = 1;
-    public static int SAMPLE_RATE = 16000;
-    public static int BITRATE = 128;
+    public static int MP3_NUM_CHANNELS = 2;
+    public static int MP3_SAMPLE_RATE = 44100;
+    public static int MP3_BITRATE = 128;
+    public static final int MP3_MODE = 0;
+    public static final int MP3_QUALITY = 3;
+
+
+    public static int RECORDER_SAMPLE_RATE = 44100;
     public static int MONO_OR_STEREO = -1;
     public static int CHANNEL_ENCODING_8_16_BIT = -1;
-    public static final int MODE = 1;
-    public static final int QUALITY = 2;
+
     private AudioRecord mRecorder;
     private short[] mBuffer;
     private final String startRecordingLabel = "Start recording";
@@ -159,9 +164,9 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
 
 
-    private static int[] mSampleRates = new int[] {  44100, 22050, 11025, 8000   };
-    private static int [] aformats = new int[] { AudioFormat.ENCODING_PCM_8BIT, AudioFormat.ENCODING_PCM_16BIT };
-    private static int [] chConfigs = new int[] { AudioFormat.CHANNEL_IN_MONO, AudioFormat.CHANNEL_IN_STEREO };
+    private static int[] mSampleRates = new int[] {  44100};
+    private static int [] aformats = new int[] {AudioFormat.ENCODING_PCM_16BIT };
+    private static int [] chConfigs = new int[] { AudioFormat.CHANNEL_IN_MONO};
 
 
     public AudioRecord findAudioRecord() {
@@ -178,7 +183,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                             AudioRecord recorder = new AudioRecord(android.media.MediaRecorder.AudioSource.MIC, rate, channelConfig, audioFormat, java.lang.Math.max(bufferSize,1024*800));
 
                             if (recorder.getState() == AudioRecord.STATE_INITIALIZED){
-                                SAMPLE_RATE = rate;
+                                RECORDER_SAMPLE_RATE = rate;
                                 MONO_OR_STEREO = channelConfig;
                                 CHANNEL_ENCODING_8_16_BIT = audioFormat;
                                 return recorder;
@@ -198,7 +203,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
         mRecorder = findAudioRecord();
 
-        int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, MONO_OR_STEREO,
+        int bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLE_RATE, MONO_OR_STEREO,
                 CHANNEL_ENCODING_8_16_BIT);
         if(bufferSize<0){
             mRecorder.stop();
@@ -282,12 +287,15 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
         @Override
         public void run() {
-                musicService.isRecoding = true;
                 while (musicService.isRecoding) {
                     int readSize = musicService.mRecorder.read(musicService.mBuffer, 0, musicService.mBuffer.length);
-                    musicService.readSamples.add(Arrays.copyOfRange(musicService.mBuffer, 0, readSize));
-                    if(musicService.encodingThread.isAlive()){
-                        break;
+                    if(readSize>0)
+                        musicService.readSamples.add(Arrays.copyOfRange(musicService.mBuffer, 0, readSize));
+
+                    try {
+                        sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
                 musicService.isRecoding = false;
@@ -300,7 +308,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
         public EncoderThread(RecordingService service) {
             this.musicService = service;
-            musicService.initEncoder(NUM_CHANNELS, SAMPLE_RATE, BITRATE, MODE, QUALITY); // initialize an mp3 encoder
+            musicService.initEncoder(MP3_NUM_CHANNELS, MP3_SAMPLE_RATE, MP3_BITRATE, MP3_MODE, MP3_QUALITY); // initialize an mp3 encoder
             //init allspark
         }
 
@@ -320,8 +328,9 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                     short[] samples = musicService.readSamples.pollFirst();
                     //call lame encoder and dump data into another list
                     try {
-                        req.getOutputStream().write(musicService.encodeToMp3Bytes(samples, samples.length));
-                        if((numSamplesFlushed+=samples.length) > 1500){
+                        byte[] mp3Bytes = musicService.encodeToMp3Bytes(samples, samples.length);
+                        req.getOutputStream().write(mp3Bytes);
+                        if((numSamplesFlushed+=mp3Bytes.length) > 32*1024){
                             numSamplesFlushed = 0;
                             req.getOutputStream().flush();
                         }
@@ -338,14 +347,14 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                     }
                 }
             }
-
+            musicService.isRecoding = false;
         }
     }
 
 
 
 
-    boolean isRecoding = false;
+    volatile boolean isRecoding = false;
 
 
 
