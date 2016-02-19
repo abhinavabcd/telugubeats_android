@@ -49,7 +49,7 @@ public class StreamInfoFragments extends FragmentPagerAdapter {
                 case 0:
                     return "Live Stream";
                 case 1:
-                    return "Polls";
+                    return "Live Polls";
             }
             return null;
         }

@@ -11,13 +11,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
-import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.EventsHelper;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.models.Poll;
 import com.appsandlabs.telugubeats.models.Stream;
@@ -38,7 +37,6 @@ public class PollsFragment extends Fragment {
 
     public static class UiHandle{
 
-        TextView livePollsHeading;
         PollsListView livePollsList;
 
     }
@@ -47,7 +45,6 @@ public class PollsFragment extends Fragment {
 
     public UiHandle initUiHandle(ViewGroup layout){
 
-        uiHandle.livePollsHeading = (TextView)layout.findViewById(R.id.live_polls_heading);
         uiHandle.livePollsList = (PollsListView)layout.findViewById(R.id.live_polls_list);
 
         return uiHandle;

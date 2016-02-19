@@ -104,24 +104,43 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         // Set the adapter
 
 
+        if(mParam1!=null && !mParam1.equalsIgnoreCase("is_user")) {
+            app.getServerCalls().getLiveAudioStreams(currentPage, new GenericListener<List<Stream>>() {
 
-        app.getServerCalls().getLiveAudioStreams(currentPage, new GenericListener<List<Stream>>() {
+                @Override
+                public void onData(List<Stream> streams) {
+                    LiveStreamsFragment.this.streams = streams;
+                    mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
 
-            @Override
-            public void onData(List<Stream> streams) {
-                LiveStreamsFragment.this.streams = streams;
-                mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
+                    mListView = (AbsListView) view.findViewById(android.R.id.list);
+                    if (mListView instanceof ListView)
+                        ((ListView) mListView).setDivider(null);
+                    ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
 
-                mListView = (AbsListView) view.findViewById(android.R.id.list);
-                if(mListView instanceof ListView)
-                    ((ListView)mListView).setDivider(null);
-                ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+                    // Set OnItemClickListener so we can be notified on item clicks
+                    mListView.setOnItemClickListener(LiveStreamsFragment.this);
 
-                // Set OnItemClickListener so we can be notified on item clicks
-                mListView.setOnItemClickListener(LiveStreamsFragment.this);
+                }
+            });
+        }else{
+            app.getServerCalls().getUserStreams(currentPage, new GenericListener<List<Stream>>() {
 
-            }
-        });
+                @Override
+                public void onData(List<Stream> streams) {
+                    LiveStreamsFragment.this.streams = streams;
+                    mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
+
+                    mListView = (AbsListView) view.findViewById(android.R.id.list);
+                    if (mListView instanceof ListView)
+                        ((ListView) mListView).setDivider(null);
+                    ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+
+                    // Set OnItemClickListener so we can be notified on item clicks
+                    mListView.setOnItemClickListener(LiveStreamsFragment.this);
+
+                }
+            });
+        }
 
         return view;
     }

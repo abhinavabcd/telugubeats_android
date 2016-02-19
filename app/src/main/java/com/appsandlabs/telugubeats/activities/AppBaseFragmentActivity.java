@@ -15,6 +15,7 @@ public class AppBaseFragmentActivity extends FragmentActivity {
     public int applicationLaunchId;
 
 
+
     public void setActivityResultListener(
             GenericListener4<Integer, Integer, Intent, Void> activityResultListener) {
         this.activityResultListener = activityResultListener;

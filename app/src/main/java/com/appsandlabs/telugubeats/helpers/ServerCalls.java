@@ -66,7 +66,7 @@ public class ServerCalls {
 	}
 
     public void getStreamInfo(String streamId, final GenericListener<Stream> listener) {
-        client.get(SERVER_ADDR + "/get_stream_info/" + streamId+"?auth_key="+app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
+        client.get(SERVER_ADDR + "/get_stream_info/" + streamId + "?auth_key=" + app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String temp = new String(responseBody);
@@ -128,7 +128,7 @@ public class ServerCalls {
             return;
         }
 
-        client.get(SERVER_ADDR + "/poll/" + streamId + "/" + pollItem.poll + "/" + pollItem.id+"?auth_key="+app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
+        client.get(SERVER_ADDR + "/poll/" + streamId + "/" + pollItem.poll + "/" + pollItem.id + "?auth_key=" + app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 listener.onData(true);
@@ -149,7 +149,7 @@ public class ServerCalls {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 User user = gson.fromJson(new String(responseBody), User.class);
-                app.getUserDeviceManager().getPreferences().edit().putString(Config.PREF_ENCODED_KEY,user.auth_key).commit();
+                app.getUserDeviceManager().getPreferences().edit().putString(Config.PREF_ENCODED_KEY, user.auth_key).commit();
                 listener.onData(user);
             }
 
@@ -276,6 +276,23 @@ public class ServerCalls {
 
     public void getLiveAudioStreams(int page, final GenericListener<List<Stream>> genericListener) {
         client.get(SERVER_ADDR + "/get_live_audio_streams/"+page+"?auth_key="+app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                String response = new String(responseBody);
+                List<Stream> streams = gson.fromJson(response, new TypeToken<List<Stream>>() {}.getType());
+                genericListener.onData(streams);
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+    }
+
+    public void getUserStreams(int page, final GenericListener<List<Stream>> genericListener) {
+        client.get(SERVER_ADDR + "/get_user_streams/"+page+"?auth_key="+app.getUserDeviceManager().getAuthKey(), new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 String response = new String(responseBody);

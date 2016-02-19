@@ -63,14 +63,14 @@
                     android:id="@+id/poll_subtitle"
                     android:textSize="10sp"
                     android:text="subtitle"
-                    android:textColor="@color/less_white"
+                    android:textColor="@color/less_black"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.5" />
                 <TextView
                     android:id="@+id/poll_subtitle2"
                     android:layout_width="match_parent"
-                    android:textColor="@color/less_white"
+                    android:textColor="@color/less_black"
                     android:textSize="10sp"
                     android:text="subtitle"
 
@@ -81,7 +81,7 @@
             <TextView
                 android:textSize="10sp"
                 android:text="actors"
-                android:textColor="@color/less_white"
+                android:textColor="@color/less_black"
                 android:id="@+id/poll_subtitle3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>

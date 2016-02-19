@@ -212,7 +212,9 @@ public class StreamAndEventsFragment extends Fragment {
             }
         }
         else{
-            uiHandle.specialSongInfo.setVisibility(View.GONE);
+            uiHandle.specialSongInfo.setVisibility(View.INVISIBLE);
+            uiHandle.liveUserName.setText("Currently Talking: "+stream.getUserName());
+
         }
 
     }

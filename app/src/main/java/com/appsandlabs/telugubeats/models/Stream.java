@@ -3,6 +3,7 @@ package com.appsandlabs.telugubeats.models;
 import android.graphics.Bitmap;
 
 import com.appsandlabs.telugubeats.helpers.App;
+import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -114,5 +115,15 @@ public class Stream extends BaseModel{
 
     public String getSourceHost() {
         return (sourceHost==null? ServerCalls.SERVER_ADDR:sourceHost)+"/forward_stream/"+streamId;
+    }
+
+    public String getUserName() {
+        if(isSpecialSongStream){
+            return "Live Music";
+        }
+        else if (user!=null){
+            return user.name;
+        }
+        return Constants.APP_NAME;
     }
 }

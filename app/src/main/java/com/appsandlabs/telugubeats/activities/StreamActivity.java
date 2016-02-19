@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.design.widget.TabLayout;
 import android.support.v4.content.IntentCompat;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
@@ -60,14 +62,20 @@ public class StreamActivity extends AppBaseFragmentActivity {
              @Override
              public void onReceive(Context context, Intent intent) {
                  if (intent.getExtras() == null) return;
-                 Stream stream = StreamingService.stream;
+                 final Stream stream = StreamingService.stream;
                  if(stream==null) return;
                  if (intent.getExtras().getBoolean(Constants.STREAM_STARTED)) {
                      if (isFirstTimeStreamLoad) {
                          isFirstTimeStreamLoad = false;
 
                          setContentView(R.layout.activity_stream);
-                         addTabs(stream);
+                         new Handler().post(new Runnable() {
+                             @Override
+                             public void run() {
+                                 addTabs(stream);
+                             }
+                         });
+
                      }
                  }
                  if(intent.getExtras().getBoolean(Constants.STREAM_BITMAPS_CHANGED)){
@@ -90,8 +98,9 @@ public class StreamActivity extends AppBaseFragmentActivity {
 
     private void addTabs(Stream stream){
         appFragments = new StreamInfoFragments(getSupportFragmentManager(), StreamingService.stream);
-        ((ViewPager)findViewById(R.id.stream_view_pager)).setAdapter(appFragments);
-
+        ViewPager streamViewPager = ((ViewPager)findViewById(R.id.stream_view_pager));
+        streamViewPager.setAdapter(appFragments);
+        ((TabLayout)findViewById(R.id.stream_view_tabs)).setupWithViewPager(streamViewPager);
     }
 
     @Override

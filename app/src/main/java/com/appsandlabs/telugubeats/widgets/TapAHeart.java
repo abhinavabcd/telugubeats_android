@@ -139,7 +139,7 @@ public class TapAHeart extends ImageView implements View.OnClickListener {
             setInterpolator(new DecelerateInterpolator());
             Path p = new Path();
             p.moveTo(0f, 0f);
-            int distance = 300+random.nextInt(200);
+            int distance = 500+random.nextInt(200);
             int numSteps = 3+random.nextInt(3);
             for(int i=0;i<numSteps;i++){
                 p.rLineTo(-50-random.nextInt(100),-distance/numSteps);

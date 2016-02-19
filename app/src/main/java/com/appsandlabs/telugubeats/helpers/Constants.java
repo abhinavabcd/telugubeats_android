@@ -20,4 +20,5 @@ public class Constants {
     public static final String STREAM_EVENTS_SERVICE_STOPPED = "stream_events_service_stopped";
     public static final java.lang.String STOP_READING_EVENTS = "stop_reading_events";
     public static final java.lang.String STREAM_DESCRIPTION_CHANGED = "stream_description_changed";
+    public static final String APP_NAME = "Cup Coffee";
 }
