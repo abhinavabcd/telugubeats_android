@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical" >
 
     <LinearLayout
@@ -41,8 +41,8 @@
 
                 <Button
                     android:id="@+id/btnDelete"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="5dp"
                     android:background="@drawable/ic_action_remove" />
             </LinearLayout>
@@ -69,8 +69,8 @@
 
                 <Button
                     android:id="@+id/btnPause"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:layout_margin="5dp"
                     android:background="@drawable/ic_action_pause" />
 

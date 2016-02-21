@@ -86,7 +86,7 @@ public class PollsFragment extends Fragment {
                 }
 
                 // special reset no from server events
-                String pollsAction = intent.getExtras().getString(Constants.POLLS_ACTION);
+                String pollsAction = intent.getExtras().getString(Constants.POLLS_EVENT_TYPE);
                 if(pollsAction!=null){
                     if(pollsAction.equalsIgnoreCase(EventsHelper.Event.POLLS_RESET.toString())){
                         if(stream.livePoll==null){
@@ -108,7 +108,7 @@ public class PollsFragment extends Fragment {
 
         getActivity().registerReceiver(pollEventsReciever, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
         Log.e(Config.ERR_LOG_TAG, "resuming polls fragment");
-        pollEventsReciever.onReceive(getActivity(), new Intent().putExtra(Constants.POLLS_ACTION, EventsHelper.Event.POLLS_RESET.toString()));
+        pollEventsReciever.onReceive(getActivity(), new Intent().putExtra(Constants.POLLS_EVENT_TYPE, EventsHelper.Event.POLLS_RESET.toString()));
 
         super.onResume();
     }

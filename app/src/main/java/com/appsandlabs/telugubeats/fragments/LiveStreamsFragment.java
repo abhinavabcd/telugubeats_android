@@ -167,9 +167,10 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(streams.get(position).streamId);
+            Stream stream = streams.get(position);
+            mListener.onFragmentInteraction(stream.streamId);
             if(mParam1!=null && mParam1.equalsIgnoreCase("is_user")){
-                getActivity().startService(new Intent(getActivity(), RecordingService.class).setAction(RecordingService.NOTIFY_RECORD).putExtra(Constants.STREAM_ID, "audio_1"));
+                getActivity().startService(new Intent(getActivity(), RecordingService.class).setAction(RecordingService.NOTIFY_RECORD).putExtra(Constants.STREAM_ID, stream.streamId));
             }
             else {
                 startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));

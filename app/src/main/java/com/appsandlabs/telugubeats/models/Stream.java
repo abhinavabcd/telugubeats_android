@@ -36,7 +36,7 @@ public class Stream extends BaseModel{
 
     public String title;
     public String description;
-    public String image;
+    private String image;
 
     @SerializedName("additional_info")
     public
@@ -71,6 +71,8 @@ public class Stream extends BaseModel{
     public Poll livePoll;
 
     public Bitmap loadBitmapSyncCall(App app) {
+        String image = getImage();
+
         if(image==null) {
             return null;
         }
@@ -125,5 +127,20 @@ public class Stream extends BaseModel{
             return user.name;
         }
         return Constants.APP_NAME;
+    }
+
+
+
+    public String getImage() {
+        if(image !=null)
+            return image;
+        if(user!=null && user.picture_url!=null){
+            return user.picture_url;
+        }
+        return null;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

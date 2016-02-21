@@ -139,20 +139,20 @@ public class StreamAndEventsFragment extends Fragment {
                 if(intent.getExtras()==null) return;
                 Stream stream = StreamingService.stream;
 
-                if(intent.getExtras().getBoolean(Constants.STREAM_STARTED)){
+                if(intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)){
                     resetHeaderView(StreamingService.stream);
                     UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
                     isStreamPlaying  = true;
                 }
-                else if(intent.getExtras().getBoolean(Constants.STREAM_STOPPED)){
+                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_STOPPED)){
                     isStreamPlaying = false;
                     UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
                 }
 
-                else if(intent.getExtras().getBoolean(Constants.STREAM_EVENTS_SERVICE_STOPPED)){
+                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED)){
                     //restart service ?
                 }
-                else if(intent.getExtras().getBoolean(Constants.STREAM_DESCRIPTION_CHANGED)){
+                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_DESCRIPTION_CHANGED)){
                     resetStreamInfoHeader(stream);
                 }
 
@@ -295,7 +295,7 @@ public class StreamAndEventsFragment extends Fragment {
         TeluguBeatsApp.onFFTData = new GenericListener2<>();
 
         //stop events
-        getActivity().startService(new Intent(getActivity(), EventsListenerService.class).putExtra(Constants.STOP_READING_EVENTS, true));
+        getActivity().startService(new Intent(getActivity(), EventsListenerService.class).putExtra(Constants.IS_STOP_READING_EVENTS, true));
         super.onPause();
     }
 

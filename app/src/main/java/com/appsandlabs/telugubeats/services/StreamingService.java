@@ -77,6 +77,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private NotificationCompat.Builder notificationBuilder;
     private NotificationManager mNotificationManager;
     private Gson gson = new Gson();
+    private boolean isNotificationShown;
 
     public void setStream(Stream stream, boolean isNew) {
 
@@ -87,7 +88,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
         }
         else{
-            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_DESCRIPTION_CHANGED, true));
+            sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_DESCRIPTION_CHANGED, true));
         }
         resetNotification();
         downloadBitmapsInBg(stream);
@@ -104,7 +105,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             @Override
             public void run() {
                 stream.loadBitmapSyncCall(app);
-                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_BITMAPS_CHANGED, true));
+                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_BITMAPS_CHANGED, true));
             }
         };
         bitmapDownloaderThread.start();
@@ -136,7 +137,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         this.app = new App(getApplicationContext());
         isPlaying = false;
         Log.e(Config.ERR_LOG_TAG, "one time setup");
-        showNotification(); // show notification and show notification
         super.onCreate();
     }
 
@@ -145,33 +145,36 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         Bundle extras = intent.getExtras();
         String streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
 
-        if(streamId!=null){
-            if(stream==null || !stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
-                playStream(streamId);
+        String action = intent.getAction();
+        if (action != null && action.equalsIgnoreCase(NOTIFY_PLAY)) {
+            if(stream==null || (streamId!=null && !stream.streamId.equalsIgnoreCase(streamId))){//start a new stream
+                app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
+                    @Override
+                    public void onData(Stream stream) {
+                        playStream(stream);
+                    }
+                });
+
+            }
+            else if (stream != null && !isPlaying) {
+                playStream(stream);
             }
             else{
-                sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+                sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STARTED, true));
             }
         }
-        else {
 
-            String action = intent.getAction();
-            if (action != null && action.equalsIgnoreCase(NOTIFY_PLAY)) {
-                if (stream != null && !isPlaying)
-                    playStream(stream.streamId);
-            }
-
-            if (action != null && action.equalsIgnoreCase(NOTIFY_PAUSE)) {
-                stopStream();
-            }
-            if (action != null && action.equalsIgnoreCase(NOTIFY_DELETE)) {
-                stopStream();
-                stopForeground(true);
-                stopSelf();
-            }
-            resetNotification();
-            Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
+        if (action != null && action.equalsIgnoreCase(NOTIFY_PAUSE)) {
+            stopStream();
         }
+        if (action != null && action.equalsIgnoreCase(NOTIFY_DELETE)) {
+            stopStream();
+            stopForeground(true);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        resetNotification();
+        Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
 
         return START_STICKY;
     }
@@ -217,7 +220,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             case AudioManager.AUDIOFOCUS_GAIN:
                 Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN");
                 if(stream!=null)
-                    playStream(stream.streamId);
+                    playStream(stream);
                 break;
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
                 Log.e(Config.ERR_LOG_TAG, "AUDIOFOCUS_GAIN_TRANSIENT");
@@ -319,7 +322,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             Decoder decoder = new Decoder();
             isPlaying = true;
 
-            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STARTED, true));
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STARTED, true));
             resetNotification();
 
             while (isPlaying) {
@@ -404,7 +407,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
 
 
-    boolean currentVersionSupportBigNotification = Config.currentVersionSupportBigNotification();
+//    boolean currentVersionSupportBigNotification = Config.currentVersionSupportBigNotification();
     boolean currentVersionSupportLockScreenControls = Config.currentVersionSupportLockScreenControls();
 
     @SuppressLint("NewApi")
@@ -420,6 +423,11 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     @SuppressLint("NewApi")
     private void showNotification(boolean showDeleteButton) {
 
+        if(isNotificationShown){
+            return;
+        }
+        isNotificationShown = true;
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         simpleContentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_notification);
@@ -428,10 +436,10 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
         if(!showDeleteButton) {
             simpleContentView.setViewVisibility(R.id.btnDelete, View.GONE);
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnDelete, View.GONE);
-
-            }
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnDelete, View.GONE);
+//
+//            }
         }
 
         setNotificationListeners(simpleContentView);
@@ -454,9 +462,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         Notification notification = notificationBuilder.build();
 
         notification.contentView = simpleContentView;
-        if (currentVersionSupportBigNotification) {
-            notification.bigContentView = expandedView;
-        }
+//        if (currentVersionSupportBigNotification) {
+//            notification.bigContentView = expandedView;
+//        }
 
 
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
@@ -474,9 +482,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         Notification notification = notificationBuilder.build();
 
         notification.contentView = simpleContentView;
-        if (currentVersionSupportBigNotification) {
-            notification.bigContentView = expandedView;
-        }
+//        if (currentVersionSupportBigNotification) {
+//            notification.bigContentView = expandedView;
+//        }
 
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
@@ -488,10 +496,10 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         if(stream==null) return;
         simpleContentView.setTextViewText(R.id.title, stream.title);
         simpleContentView.setTextViewText(R.id.subtitle, stream.getSubTitle());
-        if (currentVersionSupportBigNotification) {
-            expandedView.setTextViewText(R.id.title, stream.title);
-            expandedView.setTextViewText(R.id.subtitle, stream.getSubTitle());
-        }
+//        if (currentVersionSupportBigNotification) {
+//            expandedView.setTextViewText(R.id.title, stream.title);
+//            expandedView.setTextViewText(R.id.subtitle, stream.getSubTitle());
+//        }
         refreshNotification();
     }
 
@@ -502,32 +510,32 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             simpleContentView.setViewVisibility(R.id.btnPause, View.GONE);
             simpleContentView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
 
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnPause, View.GONE);
-                expandedView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
-            }
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnPause, View.GONE);
+//                expandedView.setViewVisibility(R.id.btnPlay, View.VISIBLE);
+//            }
         } else {
             simpleContentView.setViewVisibility(R.id.btnPause, View.VISIBLE);
             simpleContentView.setViewVisibility(R.id.btnPlay, View.GONE);
 
-            if (currentVersionSupportBigNotification) {
-                expandedView.setViewVisibility(R.id.btnPause, View.VISIBLE);
-                expandedView.setViewVisibility(R.id.btnPlay, View.GONE);
-            }
+//            if (currentVersionSupportBigNotification) {
+//                expandedView.setViewVisibility(R.id.btnPause, View.VISIBLE);
+//                expandedView.setViewVisibility(R.id.btnPlay, View.GONE);
+//            }
         }
         refreshNotification();
     }
 
     private void resetNotificationBitmap() {
 
-        if(stream.image!=null){
-            app.getUiUtils().getBitmapFromURL(stream.image, new GenericListener<Bitmap>() {
+        if(stream.getImage() !=null){
+            app.getUiUtils().getBitmapFromURL(stream.getImage(), new GenericListener<Bitmap>() {
                 @Override
                 public void onData(Bitmap s) {
                     simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
-                    if (currentVersionSupportBigNotification) {
-                        expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
-                    }
+//                    if (currentVersionSupportBigNotification) {
+//                        expandedView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
+//                    }
                     refreshNotification();
                 }
             });
@@ -537,10 +545,10 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     private void resetNotification() {
         if(stream==null) return;
+        showNotification();//one time setup only
         resetNotificationBitmap();
         resetNotificationPlayPause();
         resetNotificationTitles();
-
     }
 
 
@@ -599,39 +607,48 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         }
     }
 
-    final Object sync = new Object();
-    private boolean playStream(String streamId) {
 
-        if(isPlaying && (playingThread!=null && playingThread.isAlive()) && stream!=null && streamId!=null && stream.streamId.equalsIgnoreCase(streamId)) {
-            return false;
-        }
-
+    private synchronized void playStream(String streamId) {
         app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
             @Override
             public void onData(Stream s) {
-                if (s == null) {
-                    isPlaying = false;
-                    return;
-                }
-                setStream(s);
-                if (requestAudioFocus()) {
-                    // 2. Kill off any other play back sources
-                    forceMusicStop();
-                    // 3. Register broadcast recetupBroadcastReceiver();
-                }
-                playingThread = new MusicPlayThread(StreamingService.this);
-                //downloads stream and starts playing mp3 music and keep updating polls
-                playingThread.start();
-
+              playStream(s);
             }
-
         });
+    }
+
+    private synchronized  boolean playStream(Stream stream) {
+        if(stream==null){
+            isPlaying = false;
+            stopStream();
+            return false;
+        }
+
+        if(isPlaying && (playingThread!=null && playingThread.isAlive()) && this.stream!=null && stream.streamId.equalsIgnoreCase(this.stream.streamId)) {
+            return false;
+        }
+
+        stopStream();//old stream if any
+        setStream(stream);
+        if (requestAudioFocus()) {
+            // 2. Kill off any other play back sources
+            forceMusicStop();
+            // 3. Register broadcast recetupBroadcastReceiver();
+        }
+
+        playingThread = new MusicPlayThread(StreamingService.this);
+        //downloads stream and starts playing mp3 music and keep updating polls
+        playingThread.start();
         return true;
     }
 
     private void stopStream(){
+        stopStream(false);
+    }
+    private void stopStream(boolean silent){
         isPlaying = false;
-        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STOPPED, true));
+        if(!silent)
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STOPPED, true));
         try {
             if(playingThread!=null)
                 playingThread.join();

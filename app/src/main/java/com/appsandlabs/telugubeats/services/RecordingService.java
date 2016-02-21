@@ -42,7 +42,7 @@ import java.util.LinkedList;
  */
 public class RecordingService extends Service{//} implements AudioManager.OnAudioFocusChangeListener {
 
-
+    private static String TAG = "RecodringService";
     private volatile RecordingThread recordingThread;
 
     public static final int FFT_N_SAMPLES = 2 * 1024;
@@ -61,6 +61,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     private Gson gson = new Gson();
     private LinkedList<short[]> readSamples;
     private volatile EncoderThread encodingThread;
+    private boolean isNotificationShown = false;
 
 
     public void setRecordingStream(Stream stream) {
@@ -79,7 +80,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
             @Override
             public void run() {
                 stream.loadBitmapSyncCall(app);
-                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_BITMAPS_CHANGED, true));
+                sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_BITMAPS_CHANGED, true));
             }
         };
         bitmapDownloaderThread.start();
@@ -98,7 +99,6 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         this.app = new App(getApplicationContext());
         isRecoding = false;
         Log.e(Config.ERR_LOG_TAG, "one time setup");
-        showNotification(); // show notification and show notification
         super.onCreate();
     }
 
@@ -109,12 +109,17 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         String action = intent.getAction();
         if(action==null) return START_STICKY;
         String streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
+
         if(action.equalsIgnoreCase(NOTIFY_RECORD)){
+            //detroy any streaming service.
+            showNotification(); // show notification and show notification
+
+            startService(new Intent(this, StreamingService.class).setAction(StreamingService.NOTIFY_DELETE));
             //if stream already exists , simpley push the data
-            if(stream!=null && stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
-                continueStream(stream);
-            }
-            else{
+//            if(stream!=null && stream.streamId.equalsIgnoreCase(streamId)){//start a new stream
+//                continueStream(stream);
+//            }
+            if(streamId!=null){
                 //stopRecordingOldStream();
                 app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
                     @Override
@@ -122,12 +127,11 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                         app.getCurrentUser(new GenericListener<User>() {
                             @Override
                             public void onData(User user) {
-                                if (s != null && !s.isSpecialSongStream && user.isSame(s.user) && !s.isLive){
+                                if (s != null && !s.isSpecialSongStream && user.isSame(s.user) && !s.isLive) {
                                     setRecordingStream(s);
                                     continueStream(s);
-                                }
-                                else{
-                                    Toast.makeText(getApplicationContext(), "Some error has occured , the stream is already live or you don't own the stream." , Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(getApplicationContext(), "Some error has occured , the stream is already live or you don't own the stream.", Toast.LENGTH_LONG).show();
                                 }
                             }
                         });
@@ -135,6 +139,15 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                 });
             }
         }
+        if(action.equalsIgnoreCase(NOTIFY_DELETE) || action.equalsIgnoreCase(NOTIFY_PAUSE)){
+            //if stream already exists , simpley push the data
+            stopRecording();
+            stopForeground(true);
+            stopSelf();
+        }
+
+
+
         return START_STICKY;
     }
 
@@ -157,7 +170,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     public static int MP3_SAMPLE_RATE = 44100;
     public static int MP3_BITRATE = 128;
     public static final int MP3_MODE = 0;
-    public static final int MP3_QUALITY = 3;
+    public static final int MP3_QUALITY = 2;
 
 
     public static int RECORDER_SAMPLE_RATE = 44100;
@@ -209,14 +222,20 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     }
 
     private void initRecorder() {
+        if(mRecorder!=null) {
+            try {
+                mRecorder.stop();
+                mRecorder.release();
+            } catch (Exception e) {
 
+            }
+        }
         mRecorder = findAudioRecord();
 
         int bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLE_RATE, MONO_OR_STEREO,
                 CHANNEL_ENCODING_8_16_BIT);
+
         if(bufferSize<0){
-            mRecorder.stop();
-            mRecorder.release();
             initRecorder();
             return;
         }
@@ -292,6 +311,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
             if(musicService.mRecorder.getRecordingState()!=AudioRecord.RECORDSTATE_RECORDING){
                 musicService.mRecorder.startRecording(); // you can now get samples
             }
+
+            musicService.sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STARTED, true));
         }
 
         @Override
@@ -308,7 +329,9 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                     }
                 }
                 musicService.isRecoding = false;
-
+                musicService.sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STOPPED, true));
+                musicService.mRecorder.stop();
+                musicService.mRecorder.release();
         }
     }
 
@@ -336,6 +359,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                 if(musicService.readSamples!=null && musicService.readSamples.size()>0) {
                     short[] samples = musicService.readSamples.pollFirst();
                     //call lame encoder and dump data into another list
+
+                    Log.d(TAG, "pending encoding buffer size ::  "+musicService.readSamples.size());
                     try {
                         byte[] mp3Bytes = musicService.encodeToMp3Bytes(samples, samples.length);
                         req.getOutputStream().write(mp3Bytes);
@@ -357,6 +382,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                 }
             }
             musicService.isRecoding = false;
+            musicService.destroyEncoder();
+
         }
     }
 
@@ -382,6 +409,11 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
          */
     @SuppressLint("NewApi")
     private void showNotification(boolean showDeleteButton) {
+
+        if(isNotificationShown){
+            return;
+        }
+        isNotificationShown = true;
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -482,8 +514,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
     private void resetNotificationBitmap() {
 
-        if(stream.image!=null){
-            app.getUiUtils().getBitmapFromURL(stream.image, new GenericListener<Bitmap>() {
+        if(stream.getImage() !=null){
+            app.getUiUtils().getBitmapFromURL(stream.getImage(), new GenericListener<Bitmap>() {
                 @Override
                 public void onData(Bitmap s) {
                     simpleContentView.setImageViewBitmap(R.id.imageViewAlbumArt, s);
@@ -593,7 +625,6 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
     private void stopRecording(){
         isRecoding = false;
-        sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_STOPPED, true));
         try {
             if(recordingThread !=null)
                 recordingThread.join();
@@ -608,5 +639,4 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         }
         //stopped here
     }
-
 }

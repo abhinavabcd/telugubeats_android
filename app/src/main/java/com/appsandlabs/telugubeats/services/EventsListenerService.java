@@ -43,7 +43,7 @@ public class EventsListenerService extends IntentService {
         Bundle extras = intent.getExtras();
         boolean isStop = false;
         if(extras!=null){
-            isStop = extras.getBoolean(Constants.STOP_READING_EVENTS);
+            isStop = extras.getBoolean(Constants.IS_STOP_READING_EVENTS);
         }
 
         gracefullyCloseInpStream();
@@ -126,7 +126,7 @@ public class EventsListenerService extends IntentService {
             Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_SHORT).show();
         }
         Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
-        sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.STREAM_EVENTS_SERVICE_STOPPED, true));
+        sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED, true));
     }
 
     private boolean publishEvent(int readerId, StreamEvent event) {

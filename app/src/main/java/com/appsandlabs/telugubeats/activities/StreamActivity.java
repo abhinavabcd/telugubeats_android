@@ -64,7 +64,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
                  if (intent.getExtras() == null) return;
                  final Stream stream = StreamingService.stream;
                  if(stream==null) return;
-                 if (intent.getExtras().getBoolean(Constants.STREAM_STARTED)) {
+                 if (intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)) {
                      if (isFirstTimeStreamLoad) {
                          isFirstTimeStreamLoad = false;
 
@@ -78,7 +78,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
 
                      }
                  }
-                 if(intent.getExtras().getBoolean(Constants.STREAM_BITMAPS_CHANGED)){
+                 if(intent.getExtras().getBoolean(Constants.IS_STREAM_BITMAPS_CHANGED)){
                      if(stream.getBlurredImageBitmap()!=null){
                          //main activity //TODO: dirty fix
                          UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));
@@ -110,7 +110,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
             @Override
             public void onData(User s) {
                 registerStreamChangesListener();
-                startService(new Intent(StreamActivity.this, StreamingService.class).putExtra(Constants.STREAM_ID, streamId));
+                startService(new Intent(StreamActivity.this, StreamingService.class).setAction(StreamingService.NOTIFY_PLAY).putExtra(Constants.STREAM_ID, streamId));
             }
         });
     }
@@ -159,4 +159,11 @@ public class StreamActivity extends AppBaseFragmentActivity {
         finish();
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent(StreamActivity.this, MainActivity.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | IntentCompat.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        startActivity(i);
+        super.onBackPressed();
+    }
 }

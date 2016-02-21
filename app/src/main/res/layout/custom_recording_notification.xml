@@ -61,14 +61,14 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_margin="5dp"
-                android:background="@drawable/ic_action_pause" />
+                android:background="@drawable/record_stop" />
 
             <Button
                 android:id="@+id/btnPlay"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_margin="5dp"
-                android:background="@drawable/ic_action_play"
+                android:background="@drawable/record_start"
                 android:visibility="gone" />
 
         </LinearLayout>

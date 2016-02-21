@@ -68,7 +68,7 @@ public class StreamAndEventsUiHolder {
 
         uiHandle.saySomethingText = (EditText)layout.findViewById(R.id.say_something_text);
         uiHandle.sayButton  = (Button)layout.findViewById(R.id.say_button);
-        uiHandle.specialSongInfo = (LinearLayout)layout.findViewById(R.id.special_song_stream);
+        uiHandle.specialSongInfo = (LinearLayout)layout.findViewById(R.id.special_song_stream_info);
 
         uiHandle.tapAHeart = (TapAHeart)layout.findViewById(R.id.tap_hearts);
 

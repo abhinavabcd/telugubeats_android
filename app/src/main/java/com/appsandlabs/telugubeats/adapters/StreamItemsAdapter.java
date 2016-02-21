@@ -48,8 +48,8 @@ public class StreamItemsAdapter extends ArrayAdapter<Stream> {
 
 
         StreamViewHolder ui = (StreamViewHolder) convertView.getTag();
-        if(stream.image!=null) {
-            Picasso.with(getContext()).load(stream.image).into(ui.streamImage);
+        if(stream.getImage() !=null) {
+            Picasso.with(getContext()).load(stream.getImage()).into(ui.streamImage);
         }
         else if(stream.user!=null){
             Picasso.with(getContext()).load(stream.user.picture_url).into(ui.streamImage);

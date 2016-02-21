@@ -7,6 +7,7 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
@@ -20,6 +21,8 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
 
     private ViewPager pages;
     private TabLayout tabs;
+
+    private ImageView streamStatusIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
 
                 tabs = (TabLayout)findViewById(R.id.tab_layout);
                 tabs.setupWithViewPager(pages);
+                streamStatusIcon = (ImageView) findViewById(R.id.stream_status);
 
             }
         });
