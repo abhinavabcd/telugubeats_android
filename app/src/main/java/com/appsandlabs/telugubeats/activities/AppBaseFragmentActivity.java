@@ -1,5 +1,7 @@
 package com.appsandlabs.telugubeats.activities;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 
@@ -13,7 +15,7 @@ public class AppBaseFragmentActivity extends FragmentActivity {
 
     private GenericListener4<Integer, Integer, Intent, Void> activityResultListener;
     public int applicationLaunchId;
-
+    private BroadcastReceiver broadCastReceiver;
 
 
     public void setActivityResultListener(
@@ -30,4 +32,21 @@ public class AppBaseFragmentActivity extends FragmentActivity {
             activityResultListener.onData(requestCode, resultCode, data);
         }
     }
+
+
+
+    public BroadcastReceiver getBroadCastReceiver() {
+        if(broadCastReceiver!=null) return broadCastReceiver;
+        else return broadCastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                AppBaseFragmentActivity.this.onReceive(context, intent);
+            }
+        };
+    }
+
+    protected void onReceive(Context context, Intent intent) {
+
+    }
+
 }

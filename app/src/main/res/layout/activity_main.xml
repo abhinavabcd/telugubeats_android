@@ -32,7 +32,7 @@
     </LinearLayout>
 
 
-    <com.appsandlabs.telugubeats.widgets.StreamStatusIcon
+    <ImageView
         android:visibility="gone"
         android:layout_width="40dp"
         android:layout_height="40dp"
@@ -43,8 +43,6 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:id="@+id/stream_status"
-        >
+        ></ImageView>
 
-
-    </com.appsandlabs.telugubeats.widgets.StreamStatusIcon>
 </RelativeLayout>

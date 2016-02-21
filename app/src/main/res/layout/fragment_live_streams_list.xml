@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#CCC"
+    android:id="@+id/swipe_refresh"
     tools:context="com.appsandlabs.telugubeats.fragments.LiveStreamsFragment">
 
     <ListView android:id="@android:id/list" android:layout_width="match_parent"
@@ -14,4 +15,4 @@
 
 
 
-</RelativeLayout>
+</android.support.v4.widget.SwipeRefreshLayout>

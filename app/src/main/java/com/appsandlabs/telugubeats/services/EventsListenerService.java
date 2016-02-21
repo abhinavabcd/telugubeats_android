@@ -123,7 +123,8 @@ public class EventsListenerService extends IntentService {
 //                }
 //            }
         } catch (IOException | IllegalStateException e) {
-            Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_SHORT).show();
+            Log.e(Config.ERR_LOG_TAG, "Stream closed by exception");
+
         }
         Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
         sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED, true));

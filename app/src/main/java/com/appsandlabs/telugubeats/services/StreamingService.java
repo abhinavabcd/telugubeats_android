@@ -71,7 +71,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private boolean mReceiverRegistered = false;
     private boolean audioFocus;
     private App app;
-    public static Stream stream;
+    public volatile static Stream stream;
     private RemoteViews simpleContentView;
     private RemoteViews expandedView;
     private NotificationCompat.Builder notificationBuilder;
@@ -84,13 +84,14 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         if(stream==null) return;
 
         StreamingService.stream = stream;
+        if(isNotificationShown)
+            resetNotificationPlayPause();
         if(isNew) {
             sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.NEW_STREAM, true));
         }
         else{
             sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_DESCRIPTION_CHANGED, true));
         }
-        resetNotification();
         downloadBitmapsInBg(stream);
     }
 
@@ -104,7 +105,8 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         Thread bitmapDownloaderThread = new Thread(){
             @Override
             public void run() {
-                stream.loadBitmapSyncCall(app);
+                if(stream.bitmap==null)
+                    stream.loadBitmapSyncCall(app);
                 sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_BITMAPS_CHANGED, true));
             }
         };
@@ -147,6 +149,8 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
         String action = intent.getAction();
         if (action != null && action.equalsIgnoreCase(NOTIFY_PLAY)) {
+            startService(new Intent(this, RecordingService.class).setAction(RecordingService.NOTIFY_DELETE));
+
             if(stream==null || (streamId!=null && !stream.streamId.equalsIgnoreCase(streamId))){//start a new stream
                 app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
                     @Override
@@ -159,13 +163,11 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             else if (stream != null && !isPlaying) {
                 playStream(stream);
             }
-            else{
-                sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STARTED, true));
-            }
         }
 
         if (action != null && action.equalsIgnoreCase(NOTIFY_PAUSE)) {
             stopStream();
+            resetNotification();
         }
         if (action != null && action.equalsIgnoreCase(NOTIFY_DELETE)) {
             stopStream();
@@ -173,7 +175,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             stopSelf();
             return START_NOT_STICKY;
         }
-        resetNotification();
         Log.e(Config.ERR_LOG_TAG, "Service start called with :: "+(action==null?"null":action));
 
         return START_STICKY;
@@ -291,7 +292,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     }
 
 
-    boolean isPlaying = false;
+    public static volatile boolean isPlaying = false;
     private float[] fftArrayLeft;
     private float[] fftArrayRight;
 
@@ -627,9 +628,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         if(isPlaying && (playingThread!=null && playingThread.isAlive()) && this.stream!=null && stream.streamId.equalsIgnoreCase(this.stream.streamId)) {
             return false;
         }
-
-        stopStream();//old stream if any
+        isPlaying = true;
         setStream(stream);
+        stopStream();//old stream if any
         if (requestAudioFocus()) {
             // 2. Kill off any other play back sources
             forceMusicStop();

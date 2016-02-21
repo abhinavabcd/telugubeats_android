@@ -138,6 +138,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                     }
                 });
             }
+
         }
         if(action.equalsIgnoreCase(NOTIFY_DELETE) || action.equalsIgnoreCase(NOTIFY_PAUSE)){
             //if stream already exists , simpley push the data
@@ -177,8 +178,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     public static int MONO_OR_STEREO = -1;
     public static int CHANNEL_ENCODING_8_16_BIT = -1;
 
-    private AudioRecord mRecorder;
-    private short[] mBuffer;
+    private volatile AudioRecord mRecorder;
+    private volatile short[] mBuffer;
     private final String startRecordingLabel = "Start recording";
     private final String stopRecordingLabel = "Stop recording";
 
@@ -223,12 +224,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
     private void initRecorder() {
         if(mRecorder!=null) {
-            try {
-                mRecorder.stop();
-                mRecorder.release();
-            } catch (Exception e) {
-
-            }
+            mRecorder.release();
+            mRecorder = null;
         }
         mRecorder = findAudioRecord();
 
@@ -302,25 +299,32 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
 
     public static class RecordingThread extends Thread {
-        private RecordingService musicService;
+        private RecordingService recordingService;
 
         RecordingThread(RecordingService service) {
-            this.musicService = service;
-            if(musicService.mRecorder==null)
-                musicService.initRecorder();
-            if(musicService.mRecorder.getRecordingState()!=AudioRecord.RECORDSTATE_RECORDING){
-                musicService.mRecorder.startRecording(); // you can now get samples
+            this.recordingService = service;
+            if(recordingService.mRecorder==null)
+                recordingService.initRecorder();
+            for(int i=0;i<3;i++) {
+                try {
+                    sleep(100);
+                    if (recordingService.mRecorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+                        recordingService.mRecorder.startRecording(); // you can now get samples
+                    }
+                    break;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-
-            musicService.sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STARTED, true));
+            recordingService.sendStartEvent();
         }
 
         @Override
         public void run() {
-                while (musicService.isRecoding) {
-                    int readSize = musicService.mRecorder.read(musicService.mBuffer, 0, musicService.mBuffer.length);
+                while (recordingService.isRecoding) {
+                    int readSize = recordingService.mRecorder.read(recordingService.mBuffer, 0, recordingService.mBuffer.length);
                     if(readSize>0)
-                        musicService.readSamples.add(Arrays.copyOfRange(musicService.mBuffer, 0, readSize));
+                        recordingService.readSamples.add(Arrays.copyOfRange(recordingService.mBuffer, 0, readSize));
 
                     try {
                         sleep(10);
@@ -328,12 +332,14 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                         e.printStackTrace();
                     }
                 }
-                musicService.isRecoding = false;
-                musicService.sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STOPPED, true));
-                musicService.mRecorder.stop();
-                musicService.mRecorder.release();
         }
     }
+
+    private void sendStartEvent() {
+        sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STARTED, true));
+    }
+
+
 
     public static class EncoderThread extends Thread {
         private RecordingService musicService;
@@ -390,7 +396,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
 
 
-    volatile boolean isRecoding = false;
+    public static volatile boolean isRecoding = false;
 
 
 
@@ -531,6 +537,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
     private void resetNotification() {
         if(stream==null) return;
+        showNotification();
         resetNotificationBitmap();
         resetNotificationPlayPause();
         resetNotificationTitles();
@@ -625,6 +632,12 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
     private void stopRecording(){
         isRecoding = false;
+        sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STOPPED, true));
+
+        if(mRecorder!=null) {
+            mRecorder.release();
+        }
+
         try {
             if(recordingThread !=null)
                 recordingThread.join();

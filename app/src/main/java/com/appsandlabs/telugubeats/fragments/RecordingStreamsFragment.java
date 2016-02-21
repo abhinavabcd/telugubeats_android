@@ -15,13 +15,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.activities.StreamActivity;
 import com.appsandlabs.telugubeats.adapters.StreamItemsAdapter;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.interfaces.OnFragmentInteractionListener;
 import com.appsandlabs.telugubeats.models.Stream;
+import com.appsandlabs.telugubeats.services.RecordingService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ import java.util.List;
  * Activities containing this fragment MUST implement the {@link OnFragmentInteractionListener}
  * interface.
  */
-public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class RecordingStreamsFragment extends Fragment implements AbsListView.OnItemClickListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -63,8 +63,8 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // TODO: Rename and change types of parameters
-    public static LiveStreamsFragment newInstance(String param1) {
-        LiveStreamsFragment fragment = new LiveStreamsFragment();
+    public static RecordingStreamsFragment newInstance(String param1) {
+        RecordingStreamsFragment fragment = new RecordingStreamsFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         fragment.setArguments(args);
@@ -75,7 +75,7 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public LiveStreamsFragment() {
+    public RecordingStreamsFragment() {
     }
 
     @Override
@@ -100,8 +100,6 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         final View view = inflater.inflate(R.layout.fragment_live_streams, container, false);
 
         // Set the adapter
-
-
         mAdapter = new StreamItemsAdapter(getActivity(), R.layout.stream_list_item, streams);
 
         swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh);
@@ -117,31 +115,28 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         if (mListView instanceof ListView)
             ((ListView) mListView).setDivider(null);
         ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
-        mListView.setOnItemClickListener(LiveStreamsFragment.this);
-
-
+        mListView.setOnItemClickListener(RecordingStreamsFragment.this);
 
         refreshItems(0);
-
 
 
         return view;
     }
 
     private void refreshItems(final int page) {
-        app.getServerCalls().getLiveAudioStreams(currentPage, new GenericListener<List<Stream>>() {
+        app.getServerCalls().getUserStreams(page, new GenericListener<List<Stream>>() {
 
             @Override
             public void onData(List<Stream> streams) {
                 swipeRefreshLayout.setRefreshing(false);
-                if(page==0){
-                    LiveStreamsFragment.this.streams.clear();
+                if(page==0) {
+                    RecordingStreamsFragment.this.streams.clear();
                 }
-                LiveStreamsFragment.this.streams.addAll(streams);
+                RecordingStreamsFragment.this.streams.addAll(streams);
                 mAdapter.notifyDataSetChanged();
+                // Set OnItemClickListener so we can be notified on item clicks
             }
         });
-
     }
 
     @Override
@@ -168,7 +163,7 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
             // fragment is attached to one) that an item has been selected.
             Stream stream = streams.get(position);
             mListener.onFragmentInteraction(stream.streamId);
-            startActivity(new Intent(getActivity(), StreamActivity.class).putExtra(Constants.STREAM_ID, streams.get(position).streamId));
+            getActivity().startService(new Intent(getActivity(), RecordingService.class).setAction(RecordingService.NOTIFY_RECORD).putExtra(Constants.STREAM_ID, stream.streamId));
         }
     }
 

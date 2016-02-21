@@ -52,7 +52,7 @@ public class Stream extends BaseModel{
     public User user;
 
 
-    private Bitmap bitmap;
+    public Bitmap bitmap;
     private Bitmap blurredImageBitmap;
 
 

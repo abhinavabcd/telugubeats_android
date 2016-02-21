@@ -1,6 +1,5 @@
 package com.appsandlabs.telugubeats.activities;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -13,12 +12,12 @@ import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.R;
-import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.helpers.App;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UiUtils;
+import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.models.Stream;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.pageradapters.StreamInfoFragments;
@@ -31,7 +30,6 @@ public class StreamActivity extends AppBaseFragmentActivity {
     private App app;
     private String streamId;
     private boolean isFirstTimeStreamLoad = true;
-    private BroadcastReceiver streamInfoChangesreceiver;
 
 
     @Override
@@ -54,44 +52,40 @@ public class StreamActivity extends AppBaseFragmentActivity {
     }
 
 
+    @Override
+    protected void onReceive(Context context, Intent intent) {
+        if (intent.getExtras() == null) return;
+        final Stream stream = StreamingService.stream;
+        if(stream==null) return;
+        if (intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)) {
+            if (isFirstTimeStreamLoad) {
+                isFirstTimeStreamLoad = false;
+
+                setContentView(R.layout.activity_stream);
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        addTabs(stream);
+                    }
+                });
+
+            }
+        }
+        if(intent.getExtras().getBoolean(Constants.IS_STREAM_BITMAPS_CHANGED)){
+            if(stream.getBlurredImageBitmap()!=null){
+                //main activity //TODO: dirty fix
+                UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));
+            }
+        }
+    }
 
     private void registerStreamChangesListener() {
-        IntentFilter filter = new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION);
-
-         streamInfoChangesreceiver = new BroadcastReceiver() {
-             @Override
-             public void onReceive(Context context, Intent intent) {
-                 if (intent.getExtras() == null) return;
-                 final Stream stream = StreamingService.stream;
-                 if(stream==null) return;
-                 if (intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)) {
-                     if (isFirstTimeStreamLoad) {
-                         isFirstTimeStreamLoad = false;
-
-                         setContentView(R.layout.activity_stream);
-                         new Handler().post(new Runnable() {
-                             @Override
-                             public void run() {
-                                 addTabs(stream);
-                             }
-                         });
-
-                     }
-                 }
-                 if(intent.getExtras().getBoolean(Constants.IS_STREAM_BITMAPS_CHANGED)){
-                     if(stream.getBlurredImageBitmap()!=null){
-                         //main activity //TODO: dirty fix
-                         UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));
-                     }
-                 }
-             }
-        };
+        registerReceiver(getBroadCastReceiver(), new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION));
 
         if(StreamingService.stream!=null && StreamingService.stream.getBlurredImageBitmap()!=null){
             //main activity //TODO: dirty fix
             UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(StreamingService.stream.getBlurredImageBitmap()));
         }
-        registerReceiver(streamInfoChangesreceiver, filter);
     }
 
 
@@ -117,8 +111,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
 
     @Override
     protected void onPause() {
-        if(streamInfoChangesreceiver!=null)
-            unregisterReceiver(streamInfoChangesreceiver);
+        unregisterReceiver(getBroadCastReceiver());
         super.onPause();
     }
 

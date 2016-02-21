@@ -1,21 +1,27 @@
 package com.appsandlabs.telugubeats.activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
 import com.appsandlabs.telugubeats.helpers.App;
+import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.UserDeviceManager;
 import com.appsandlabs.telugubeats.interfaces.OnFragmentInteractionListener;
 import com.appsandlabs.telugubeats.models.User;
 import com.appsandlabs.telugubeats.pageradapters.MainStreamsFragments;
+import com.appsandlabs.telugubeats.services.RecordingService;
+import com.appsandlabs.telugubeats.services.StreamingService;
 
 public class MainActivity extends AppBaseFragmentActivity implements OnFragmentInteractionListener {
 
@@ -23,6 +29,30 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
     private TabLayout tabs;
 
     private ImageView streamStatusIcon;
+
+
+    @Override
+    protected void onReceive(Context context, Intent intent) {
+        if (intent == null) return;
+        Bundle extras = intent.getExtras();
+        if (extras == null) return;
+        if (extras.getBoolean(Constants.IS_STREAM_STARTED)) {
+            streamStatusIcon.setImageResource(R.drawable.pause_button);
+            streamStatusIcon.setVisibility(View.VISIBLE);
+        }
+        else if (extras.getBoolean(Constants.IS_STREAM_STOPPED)) {
+            streamStatusIcon.setVisibility(View.GONE);
+        }
+
+        if (extras.getBoolean(Constants.IS_RECORDING_STARTED)) {
+            streamStatusIcon.setImageResource(R.drawable.record_stop);
+            streamStatusIcon.setVisibility(View.VISIBLE);
+        }
+        if (extras.getBoolean(Constants.IS_RECORDING_STOPPED)) {
+            streamStatusIcon.setVisibility(View.GONE);
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +75,17 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
                 tabs.setupWithViewPager(pages);
                 streamStatusIcon = (ImageView) findViewById(R.id.stream_status);
 
+                streamStatusIcon.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if(StreamingService.isPlaying)
+                            startService(new Intent(MainActivity.this, StreamingService.class).setAction(StreamingService.NOTIFY_DELETE));
+                        if(RecordingService.isRecoding)
+                            startService(new Intent(MainActivity.this, RecordingService.class).setAction(RecordingService.NOTIFY_DELETE));
+                    }
+                });
+
+                showStreamStatusIcon();
             }
         });
 
@@ -81,5 +122,43 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
     @Override
     public void onFragmentInteraction(String id) {
 
+    }
+
+
+    @Override
+    protected void onResume() {
+       showStreamStatusIcon();
+
+        registerReceivers();
+
+        super.onResume();
+    }
+
+    private void showStreamStatusIcon() {
+        if(streamStatusIcon!=null){
+            if(StreamingService.isPlaying){
+                streamStatusIcon.setVisibility(View.VISIBLE);
+                streamStatusIcon.setImageResource(R.drawable.pause_button);
+            }
+            else if(RecordingService.isRecoding){
+                streamStatusIcon.setVisibility(View.VISIBLE);
+                streamStatusIcon.setImageResource(R.drawable.record_stop);
+            }
+            else{
+                streamStatusIcon.setVisibility(View.GONE);
+            }
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+       unregisterReceiver(getBroadCastReceiver());
+    }
+
+    private void registerReceivers() {
+        registerReceiver(getBroadCastReceiver(), new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION));
+        registerReceiver(getBroadCastReceiver(), new IntentFilter(Constants.RECORDING_CHANGES_BROADCAST_ACTION));
     }
 }

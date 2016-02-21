@@ -52,6 +52,7 @@
                 android:id="@+id/play_pause_button"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:backgroundTint="@color/black"
                 android:background="@drawable/ic_action_pause"
                 android:layout_gravity="center_vertical" />
 
