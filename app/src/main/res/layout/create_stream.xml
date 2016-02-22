@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent"
+    android:gravity="center_vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="title"
+        android:id="@+id/title"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@android:color/black"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="3dp" />
+
+    <View android:layout_height="1dp"
+        android:layout_width="match_parent"
+        android:background="@color/black"
+        ></View>
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:id="@+id/textView2"
+        android:textColor="@color/less_black" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_title" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sub title"
+        android:id="@+id/textView3"
+        android:textColor="@color/less_black" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_subtitle" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="right">
+            <Button
+                style="@style/button_text"
+                android:background="@drawable/red_button"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="cancel"
+                android:id="@+id/cancel"
+                android:layout_gravity="right" />
+
+            <Button
+                style="@style/button_text"
+                android:background="@drawable/red_button"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create Stream"
+                android:id="@+id/ok"
+                android:layout_gravity="right" />
+        </LinearLayout>
+
+</LinearLayout>
+</LinearLayout>

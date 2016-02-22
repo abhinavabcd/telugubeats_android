@@ -24,7 +24,6 @@ import com.appsandlabs.telugubeats.models.Stream;
 import com.appsandlabs.telugubeats.services.RecordingService;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -116,6 +115,10 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
         if (mListView instanceof ListView)
             ((ListView) mListView).setDivider(null);
         ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+
+        mListView.setEmptyView(view.findViewById(R.id.empty));
+
+
         mListView.setOnItemClickListener(RecordingStreamsFragment.this);
 
         refreshItems(0);
@@ -134,6 +137,7 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
                     setEmptyText("You haven't created a stream. Click on this to create one.");
                     return;
                 }
+                setEmptyText(null);
 
                 if (page == 0) {
                     RecordingStreamsFragment.this.streams.clear();
@@ -179,8 +183,14 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
      * to supply the text it should use.
      */
     public void setEmptyText(CharSequence emptyText) {
-        View emptyView = mListView.getEmptyView();
+        if(emptyText==null) {
+            View emptyView = mListView.getEmptyView();
+            emptyView.setVisibility(View.GONE);
+            return;
+        }
 
+        View emptyView = mListView.getEmptyView();
+        emptyView.setVisibility(View.VISIBLE);
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(emptyText);
             emptyView.setOnClickListener(new View.OnClickListener() {
@@ -193,10 +203,18 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
     }
 
     private void createNewRecordingStreams() {
-        app.getUiUtils().createInput().add("Title","","text").add("Subtitle","", "text").ask(new GenericListener<HashMap<String, String>>(){
+        app.getUiUtils().promptCreateStreamInput(getActivity(), "Create new Stream", new GenericListener<Stream>() {
             @Override
-            public void onData(HashMap<String, String> s) {
-                app.getServerCalls().createNewStream(s);
+            public void onData(Stream s) {
+                app.getUiUtils().addUiBlock();
+                app.getServerCalls().createNewStream(s , new GenericListener<Stream>(){
+                    @Override
+                    public void onData(Stream s) {
+                        app.getUiUtils().removeUiBlock();
+                        streams.add(0,s);
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         });
     }

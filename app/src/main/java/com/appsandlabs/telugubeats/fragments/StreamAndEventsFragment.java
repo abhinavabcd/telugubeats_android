@@ -151,7 +151,7 @@ public class StreamAndEventsFragment extends Fragment {
             UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
             isStreamPlaying  = true;
         }
-        else if(intent.getExtras().getBoolean(Constants.IS_STREAM_STOPPED)){
+        else if(intent.getExtras().getString(Constants.IS_STREAM_STOPPED, "").equalsIgnoreCase(stream.streamId)){
             isStreamPlaying = false;
             UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
         }

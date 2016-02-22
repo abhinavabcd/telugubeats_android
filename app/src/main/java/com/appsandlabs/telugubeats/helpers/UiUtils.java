@@ -45,6 +45,7 @@ import android.widget.TextView;
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.config.Config;
 import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.models.Stream;
 import com.appsandlabs.telugubeats.widgets.CustomLoadingDialog;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
@@ -69,6 +70,7 @@ public class UiUtils {
 
 	private final App app;
 	private final Context context;
+
 
 
 	public enum Images {
@@ -1000,5 +1002,51 @@ public class UiUtils {
 		prompt.setContentView(baseLayout);
 		prompt.show();
 	}
-	
+
+
+	public void promptCreateStreamInput(FragmentActivity activity, String title, final GenericListener<Stream> streamCreateListener) {
+		final Dialog prompt = new Dialog(context,R.style.CustomDialogTheme3);
+
+		TextView titleView;
+		LinearLayout baseLayout = (LinearLayout)activity.getLayoutInflater().inflate(R.layout.create_stream, null);
+
+		titleView = (TextView) baseLayout.findViewById(R.id.title);
+		titleView.setText(title);
+
+		final EditText streamTitleTextInput = (EditText) baseLayout.findViewById(R.id.stream_title);
+		final EditText streamSubTitleTextInput = (EditText) baseLayout.findViewById(R.id.stream_subtitle);
+
+		Button okButton = (Button) baseLayout.findViewById(R.id.ok);
+		Button cancelButton = (Button) baseLayout.findViewById(R.id.cancel);
+
+		cancelButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				prompt.dismiss();
+			}
+		});
+
+		okButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Stream s = new Stream();
+				s.title = String.valueOf(streamTitleTextInput.getText());
+				s.additionalInfo = String.valueOf(streamSubTitleTextInput.getText());
+				if(s.title.trim().isEmpty()){
+
+				}
+
+				streamCreateListener.onData(s);
+				prompt.dismiss();
+			}
+		});
+
+		prompt.setContentView(baseLayout);
+		prompt.show();
+	}
+
+
+
+
+
 }

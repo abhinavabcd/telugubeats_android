@@ -12,7 +12,6 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.appsandlabs.telugubeats.R;
 import com.appsandlabs.telugubeats.activities.StreamActivity;
@@ -118,7 +117,7 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
             ((ListView) mListView).setDivider(null);
         ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
         mListView.setOnItemClickListener(LiveStreamsFragment.this);
-
+        mListView.setEmptyView(view.findViewById(R.id.empty));
 
 
         refreshItems(0);
@@ -134,7 +133,14 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
             @Override
             public void onData(List<Stream> streams) {
                 swipeRefreshLayout.setRefreshing(false);
-                if(page==0){
+
+                if(streams.size()==0){
+                    setEmptyText("No Live streams now");
+                }
+                else{
+                    setEmptyText(null);
+                }
+                if (page == 0) {
                     LiveStreamsFragment.this.streams.clear();
                 }
                 LiveStreamsFragment.this.streams.addAll(streams);
@@ -172,17 +178,16 @@ public class LiveStreamsFragment extends Fragment implements AbsListView.OnItemC
         }
     }
 
-    /**
-     * The default content for this Fragment has a TextView that is shown when
-     * the list is empty. If you would like to change the text, call this method
-     * to supply the text it should use.
-     */
     public void setEmptyText(CharSequence emptyText) {
-        View emptyView = mListView.getEmptyView();
-
-        if (emptyView instanceof TextView) {
-            ((TextView) emptyView).setText(emptyText);
+        if(emptyText==null) {
+            View emptyView = mListView.getEmptyView();
+            emptyView.setVisibility(View.GONE);
+            return;
         }
+
+        View emptyView = mListView.getEmptyView();
+        emptyView.setVisibility(View.VISIBLE);
+
     }
 
     /**

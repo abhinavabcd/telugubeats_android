@@ -401,6 +401,8 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
         }
         finally {
+            //say that stream is being closed
+            startService(new Intent(this, StreamingService.class).setAction(NOTIFY_DELETE));
             IOUtils.closeQuietly(inputStream);
         }
     }
@@ -645,10 +647,13 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     private void stopStream(){
         stopStream(false);
     }
-    private void stopStream(boolean silent){
+
+    private void stopStream(boolean force){
+        if(force || isPlaying) {
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STOPPED, stream.streamId));
+        }
+
         isPlaying = false;
-        if(!silent)
-            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STOPPED, true));
         try {
             if(playingThread!=null)
                 playingThread.join();

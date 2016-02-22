@@ -1,6 +1,11 @@
 package com.appsandlabs.telugubeats.datalisteners;
 
-public interface GenericListener<T> {
-	void onData(T s); // returns error message , if null then everything is alright
+public class GenericListener<T> {
+	public void onData(T s){
+
+	} // returns error message , if null then everything is alright
+
+	public boolean onDataB(T s){return false;} // returns error message , if null then everything is alright
+
 }
 

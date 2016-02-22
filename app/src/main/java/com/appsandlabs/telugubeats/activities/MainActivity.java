@@ -40,7 +40,7 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
             if (extras.getBoolean(Constants.IS_STREAM_STARTED)) {
                 streamStatusIcon.setImageResource(R.drawable.pause_button);
                 streamStatusIcon.setVisibility(View.VISIBLE);
-            } else if (extras.getBoolean(Constants.IS_STREAM_STOPPED)) {
+            } else if (extras.getString(Constants.IS_STREAM_STOPPED)!=null) {
                 streamStatusIcon.setVisibility(View.GONE);
             }
 

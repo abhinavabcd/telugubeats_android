@@ -25,7 +25,7 @@ import java.util.List;
 
 public class ServerCalls {
     public static final String CDN_PATH = "https://storage.googleapis.com/quizapp-tollywood/";
-    public static final String SERVER_ADDR = "http://192.168.0.3:8092";
+    public static final String SERVER_ADDR = "http://192.168.0.5:8092";
     private final Context context;
     private final App app;
 
@@ -299,6 +299,25 @@ public class ServerCalls {
                 List<Stream> streams = gson.fromJson(response, new TypeToken<List<Stream>>() {}.getType());
                 genericListener.onData(streams);
 
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+    }
+
+    public void createNewStream(Stream s, final GenericListener<Stream> genericListener) {
+        RequestParams params = new RequestParams();
+        params.put("title", s.title);
+        params.put("additional_info", s.additionalInfo);
+
+        client.post(SERVER_ADDR + "/create_stream?auth_key=" + app.getUserDeviceManager().getAuthKey(), params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                String response = new String(responseBody);
+                genericListener.onData(gson.fromJson(response, Stream.class));
             }
 
             @Override
