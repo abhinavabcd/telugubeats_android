@@ -392,17 +392,15 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             }
 
             return;
-        } catch (BitstreamException e) {
+        } catch (BitstreamException | DecoderException e) {
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_EXITED, this.stream == null ? "" : this.stream.streamId));
             throw new IOException("Bitstream error: " + e);
-        } catch (DecoderException e) {
-            Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
-            throw new DecoderException("Decoder error", e);
-        } catch (Exception e) {
-            Log.w(Config.ERR_LOG_TAG, "Decoder error", e);
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
         finally {
             //say that stream is being closed
-            startService(new Intent(this, StreamingService.class).setAction(NOTIFY_DELETE));
             IOUtils.closeQuietly(inputStream);
         }
     }
@@ -630,8 +628,9 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
             return false;
         }
         isPlaying = true;
-        setStream(stream);
         stopStream();//old stream if any
+        setStream(stream);
+
         if (requestAudioFocus()) {
             // 2. Kill off any other play back sources
             forceMusicStop();
@@ -650,7 +649,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
 
     private void stopStream(boolean force){
         if(force || isPlaying) {
-            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STOPPED, stream.streamId));
+            sendBroadcast(new Intent().setAction(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_STOPPED, stream==null?"":stream.streamId));
         }
 
         isPlaying = false;

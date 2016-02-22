@@ -164,7 +164,7 @@ public class AllSparkReq{
 	}
 
 
-	private void keepPinging(final GenericListener2<Exception, Boolean> exceptionHandler) {
+	public void keepPinging(final GenericListener2<Exception, Boolean> exceptionHandler) {
 		final byte[] pingString = "{}\r\n\r\n".getBytes();
 		(pingingThread = new Thread(PINGER_THREAD){
 			@Override

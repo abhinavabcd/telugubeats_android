@@ -70,7 +70,7 @@ public class StreamActivity extends AppBaseFragmentActivity {
                 UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));
             }
         }
-        String streamStopped = extras.getString(Constants.IS_STREAM_STOPPED);
+        String streamStopped = extras.getString(Constants.IS_STREAM_EXITED);
         if (streamStopped!=null && streamStopped.equalsIgnoreCase(streamId)) {
             onBackPressed();
         }

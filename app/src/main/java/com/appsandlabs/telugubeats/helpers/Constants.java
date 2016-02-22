@@ -19,6 +19,7 @@ public class Constants {
     public static final String IS_STREAM_EVENTS_SERVICE_STOPPED = "stream_events_service_stopped";
     public static final java.lang.String IS_STREAM_DESCRIPTION_CHANGED = "stream_description_changed";
     public static final java.lang.String IS_STOP_READING_EVENTS = "stop_reading_events";
+    public static final String IS_STREAM_EXITED = "is_stream_exited";
     public static final String POLLS_EVENT_TYPE = "polls_action";
 
 

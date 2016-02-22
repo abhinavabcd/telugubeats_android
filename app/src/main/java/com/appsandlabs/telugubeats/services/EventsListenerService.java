@@ -7,13 +7,17 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.appsandlabs.telugubeats.config.Config;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener;
+import com.appsandlabs.telugubeats.datalisteners.GenericListener2;
 import com.appsandlabs.telugubeats.helpers.Constants;
 import com.appsandlabs.telugubeats.helpers.ServerCalls;
+import com.appsandlabs.telugubeats.helpers.allsparkrt.AllSparkReq;
 import com.appsandlabs.telugubeats.models.StreamEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Random;
 
@@ -27,6 +31,7 @@ public class EventsListenerService extends IntentService {
     private static InputStream inpStream;
     private int currentReaderId;
     private String streamId;
+    private AllSparkReq req;
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -46,7 +51,9 @@ public class EventsListenerService extends IntentService {
             isStop = extras.getBoolean(Constants.IS_STOP_READING_EVENTS);
         }
 
-        gracefullyCloseInpStream();
+        if(req!=null)
+            req.gracefullyCloseConnection();
+
         if(!isStop)
             return super.onStartCommand(intent, flags, startId);
         else{
@@ -58,78 +65,101 @@ public class EventsListenerService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         currentReaderId = new Random().nextInt();
+        final int fCurrentReaderId = currentReaderId;
         Bundle extras = intent.getExtras();
         this.streamId = extras==null?null:extras.getString(Constants.STREAM_ID);
 
         if(streamId==null) return;
-        startReadingEvents(currentReaderId);
-    }
-
-
-    private void startReadingEvents(int readerId) {
-        URL url = null;
-        Log.e(Config.ERR_LOG_TAG, "Events listener has started ");
+        //startReadingEvents(currentReaderId);
         try {
-            url = new URL(ServerCalls.SERVER_ADDR + "/listen_events/" + streamId);
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestProperty("Connection", "keep-alive");
-            inpStream = con.getInputStream();
-            StringBuilder s = new StringBuilder(1024);
-            byte[] byteBuffer = new byte[1024];
-            int bytesRead = -1;
-            char[] delimiter = new char[4];
+            req = AllSparkReq.initRequest(ServerCalls.SERVER_ADDR + "/listen_events/" + streamId);
+            req.keepPinging(new GenericListener2<Exception, Boolean>(){
+                @Override
+                public void onData(Exception ex, Boolean isManuallyClosed) {
 
-            while((bytesRead = inpStream.read(byteBuffer))>0){ //read forever until the socket is closed or eof reached
-                for (int i = 0; i < bytesRead; i++) {
-                    s.append((char) byteBuffer[i]);
-                    int l = s.length();
-                    s.getChars(l > 3 ? (l - 4) : 0, l, delimiter, 0);
-                    if (delimiter[0] == '\r' && delimiter[1] == '\n' && delimiter[2] == '\r' && delimiter[3] == '\n') {
-                        if(!publishEvent(readerId , s.toString())){
-                            break;
-                        }
-                        delimiter[0] = delimiter[1] = delimiter[2] = delimiter[3] = '\0';
-                        s.setLength(0);
-                    }
                 }
-            }
-            if(bytesRead<=0){
-                throw(new IOException());
-            }
-//            Scanner inputStream = new Scanner(new InputStreamReader((inpStream)));
-//            inputStream.useDelimiter("\r\n");
-//            boolean keepReading = true;
-//            while(keepReading){
-//                StringBuilder str = new StringBuilder();
-//                String bytes;
-//                while(inputStream.hasNext()){
-//                    bytes = inputStream.next();
-//                    if(bytes==null) return; //reinitialize
-//                    if(bytes.equalsIgnoreCase("")){
-//                        break; // stop word reached
-//                    }
-//                    str.append(bytes);
-//                    str.append("\n");
-//                }
-//                if(str.length()> 0) {
-//                    Log.e(Config.ERR_LOG_TAG, "event found broadcasting.");
-//
-//                }
-//                else{
-//                    keepReading = false;
-//                    Log.e(Config.ERR_LOG_TAG, "Empty event found ");
-//
-//                    publishEvent(null);
-//                }
-//            }
-        } catch (IOException | IllegalStateException e) {
-            Log.e(Config.ERR_LOG_TAG, "Stream closed by exception");
+            });
+            req.startReadingEvents(new GenericListener<String>() {
+                @Override
+                public void onData(String s) {
+                    publishEvent(fCurrentReaderId, new Gson().fromJson(s, StreamEvent.class));
+                }
+            });
+            req.gracefullyCloseConnection();
 
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
         sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED, true));
     }
 
+
+//    private void startReadingEvents(int readerId) {
+//        URL url = null;
+//        Log.e(Config.ERR_LOG_TAG, "Events listener has started ");
+//        try {
+//            url = new URL(ServerCalls.SERVER_ADDR + "/listen_events/" + streamId);
+//            con = (HttpURLConnection) url.openConnection();
+//            con.setRequestProperty("Connection", "keep-alive");
+//            inpStream = con.getInputStream();
+//            StringBuilder s = new StringBuilder(1024);
+//            byte[] byteBuffer = new byte[1024];
+//            int bytesRead = -1;
+//            char[] delimiter = new char[4];
+//
+//            while((bytesRead = inpStream.read(byteBuffer))>0){ //read forever until the socket is closed or eof reached
+//                for (int i = 0; i < bytesRead; i++) {
+//                    s.append((char) byteBuffer[i]);
+//                    int l = s.length();
+//                    s.getChars(l > 3 ? (l - 4) : 0, l, delimiter, 0);
+//                    if (delimiter[0] == '\r' && delimiter[1] == '\n' && delimiter[2] == '\r' && delimiter[3] == '\n') {
+//                        if(!publishEvent(readerId , s.toString())){
+//                            break;
+//                        }
+//                        delimiter[0] = delimiter[1] = delimiter[2] = delimiter[3] = '\0';
+//                        s.setLength(0);
+//                    }
+//                }
+//            }
+//            if(bytesRead<=0){
+//                throw(new IOException());
+//            }
+////            Scanner inputStream = new Scanner(new InputStreamReader((inpStream)));
+////            inputStream.useDelimiter("\r\n");
+////            boolean keepReading = true;
+////            while(keepReading){
+////                StringBuilder str = new StringBuilder();
+////                String bytes;
+////                while(inputStream.hasNext()){
+////                    bytes = inputStream.next();
+////                    if(bytes==null) return; //reinitialize
+////                    if(bytes.equalsIgnoreCase("")){
+////                        break; // stop word reached
+////                    }
+////                    str.append(bytes);
+////                    str.append("\n");
+////                }
+////                if(str.length()> 0) {
+////                    Log.e(Config.ERR_LOG_TAG, "event found broadcasting.");
+////
+////                }
+////                else{
+////                    keepReading = false;
+////                    Log.e(Config.ERR_LOG_TAG, "Empty event found ");
+////
+////                    publishEvent(null);
+////                }
+////            }
+//        } catch (IOException | IllegalStateException e) {
+//            Log.e(Config.ERR_LOG_TAG, "Stream closed by exception");
+//
+//        }
+//        Log.e(Config.ERR_LOG_TAG, "Events listener is stopped ");
+//        sendBroadcast(new Intent(Constants.STREAM_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED, true));
+//    }
+//
     private boolean publishEvent(int readerId, StreamEvent event) {
         if(readerId!=currentReaderId){
             return false;
@@ -139,24 +169,24 @@ public class EventsListenerService extends IntentService {
         sendBroadcast(new Intent(Constants.NEW_EVENT_BROADCAST_ACTION).putExtra(Constants.STREAM_EVENT_ID, event.id.getId()));
         return true;
     }
-
-    private boolean publishEvent(int readerId, String streamEvent) {
-        return publishEvent(readerId, new Gson().fromJson(streamEvent, StreamEvent.class));
-    }
-
-
-    private void gracefullyCloseInpStream() {
-        if(inpStream!=null) {
-            try {
-                inpStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                inpStream = null;
-            }
-        }
-    }
+//
+//    private boolean publishEvent(int readerId, String streamEvent) {
+//        return publishEvent(readerId, new Gson().fromJson(streamEvent, StreamEvent.class));
+//    }
+//
+//
+//    private void gracefullyCloseInpStream() {
+//        if(inpStream!=null) {
+//            try {
+//                inpStream.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            finally {
+//                inpStream = null;
+//            }
+//        }
+//    }
 
 
 }
