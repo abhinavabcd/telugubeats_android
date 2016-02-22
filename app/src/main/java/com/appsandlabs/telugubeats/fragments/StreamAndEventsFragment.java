@@ -52,9 +52,7 @@ public class StreamAndEventsFragment extends Fragment {
 
     private ViewGroup layout;
     private App app;
-    private BroadcastReceiver eventsReceiver;
     private StreamAndEventsUiHolder uiHandle;
-    private BroadcastReceiver streamEventsreceiver;
 
 
     private Gson gson = new Gson();
@@ -75,7 +73,7 @@ public class StreamAndEventsFragment extends Fragment {
     private float[] barHeightsLeft = new float[VisualizerConfig.nBars];
     private float[] barHeightsRight = new float[VisualizerConfig.nBars];
     private View visualizerView;
-    private boolean isStreamPlaying = false;
+    private boolean isStreamPlaying = true;
     private FeedViewAdapter feedAdapter;
 
 
@@ -106,12 +104,14 @@ public class StreamAndEventsFragment extends Fragment {
 
                 String text = uiHandle.saySomethingText.getText().toString();
                 uiHandle.saySomethingText.setText("");
-                app.getServerCalls().sendChat(stream.streamId, text, new GenericListener<Boolean>() {
-                    @Override
-                    public void onData(Boolean s) {
+                if(!text.trim().isEmpty()) {
+                    app.getServerCalls().sendChat(stream.streamId, text, new GenericListener<Boolean>() {
+                        @Override
+                        public void onData(Boolean s) {
 
-                    }
-                });
+                        }
+                    });
+                }
                 uiHandle.saySomethingText.requestFocus();
                 app.getUiUtils().scrollToBottom(uiHandle.telugubeatsEvents);
             }
@@ -129,47 +129,53 @@ public class StreamAndEventsFragment extends Fragment {
     }
 
 
+    private BroadcastReceiver broadcastReceiver;
+    private BroadcastReceiver getBroadcastReceiver() {
+        if(broadcastReceiver!=null)
+            return broadcastReceiver;
 
-    private void registerStreamChangesListener() {
-        IntentFilter filter = new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION);
-
-        streamEventsreceiver = new BroadcastReceiver() {
+        return broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getExtras()==null) return;
-                Stream stream = StreamingService.stream;
-
-                if(intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)){
-                    resetHeaderView(StreamingService.stream);
-                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
-                    isStreamPlaying  = true;
-                }
-                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_STOPPED)){
-                    isStreamPlaying = false;
-                    UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
-                }
-
-                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED)){
-                    //restart service ?
-                }
-                else if(intent.getExtras().getBoolean(Constants.IS_STREAM_DESCRIPTION_CHANGED)){
-                    resetStreamInfoHeader(stream);
-                }
-
-                String eventId = intent.getExtras().getString(Constants.STREAM_EVENT_ID);
-                 if(eventId!=null){
-                     StreamEvent evt = stream.getEventById(eventId);
-                     if(evt!=null){
-                         if(evt.eventId== StreamEvent.EventId.NEW_SONG){
-                             resetStreamInfoHeader(stream);
-                         }
-                     }
-                }
-
+                StreamAndEventsFragment.this.onReceive(context, intent);
             }
         };
-        getActivity().registerReceiver(streamEventsreceiver, filter);
     }
+
+    private void onReceive(Context context, Intent intent) {
+        if(intent.getExtras()==null) return;
+
+        Stream stream = StreamingService.stream;
+        if(intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)){
+            resetHeaderView(StreamingService.stream);
+            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_pause));
+            isStreamPlaying  = true;
+        }
+        else if(intent.getExtras().getBoolean(Constants.IS_STREAM_STOPPED)){
+            isStreamPlaying = false;
+            UiUtils.setBg(uiHandle.playPauseButton, getResources().getDrawable(R.drawable.ic_action_play));
+        }
+
+        else if(intent.getExtras().getBoolean(Constants.IS_STREAM_EVENTS_SERVICE_STOPPED)){
+            //restart service ?
+        }
+        else if(intent.getExtras().getBoolean(Constants.IS_STREAM_DESCRIPTION_CHANGED)){
+            resetStreamInfoHeader(stream);
+        }
+
+        String eventId = intent.getExtras().getString(Constants.STREAM_EVENT_ID);
+        if(eventId!=null){
+            StreamEvent evt = stream.getEventById(eventId);
+            if(evt!=null){
+                if(evt.eventId== StreamEvent.EventId.NEW_SONG){
+                    resetStreamInfoHeader(stream);
+                }
+                renderEvent(evt, true);
+            }
+        }
+
+    }
+
 
 
 
@@ -231,24 +237,16 @@ public class StreamAndEventsFragment extends Fragment {
         getActivity().startService(new Intent(getActivity(), EventsListenerService.class).putExtra(Constants.STREAM_ID, stream.streamId));
 
         resetHeaderView(stream);
-        registerStreamChangesListener();
-        registerEventChangesListener();
+
+        //listen for events
+        getActivity().registerReceiver(getBroadcastReceiver(), new IntentFilter(Constants.STREAM_CHANGES_BROADCAST_ACTION));
+        getActivity().registerReceiver(getBroadcastReceiver(), new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
+
+        fetchLastEvents();
 
     }
 
-    private void registerEventChangesListener() {
-        eventsReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Bundle extras = intent.getExtras();
-                String eventId = extras.getString(Constants.STREAM_EVENT_ID, null);
-                if(eventId==null) return;
-                StreamEvent event = StreamingService.stream.getEventById(eventId);
-                //render all events row by row
-                if(event!=null)
-                    renderEvent(event, true);
-            }
-        };
+    private void fetchLastEvents() {
 
         app.getServerCalls().getLastEvents(StreamingService.stream.streamId, 0, new GenericListener<List<StreamEvent>>() {
             @Override
@@ -256,21 +254,18 @@ public class StreamAndEventsFragment extends Fragment {
                 if (s == null) return;
                 Stream stream = StreamingService.stream;
                 stream.setEvents(s);
-                if (s != null) {
-                    feedAdapter = new FeedViewAdapter(getActivity(), 0, new ArrayList<StreamEvent>());
-                    for (StreamEvent evt : s) {
-                        renderEvent(evt, false);
-                    }
-                    uiHandle.telugubeatsEvents.setAdapter(feedAdapter);
-                    uiHandle.telugubeatsEvents.invalidate();
+                feedAdapter = new FeedViewAdapter(getActivity(), 0, new ArrayList<StreamEvent>());
+                uiHandle.telugubeatsEvents.setAdapter(feedAdapter);
+                for (StreamEvent evt : s) {
+                    renderEvent(evt, false);
                 }
+                uiHandle.telugubeatsEvents.invalidate();
             }
         });
-        getActivity().registerReceiver(eventsReceiver, new IntentFilter(Constants.NEW_EVENT_BROADCAST_ACTION));
     }
 
     private void renderEvent(StreamEvent event, boolean refresh) {
-
+        if(event==null) return;
         if(event.eventId== StreamEvent.EventId.HEARTS){
             int count = Integer.parseInt(event.data);
 
@@ -278,7 +273,7 @@ public class StreamAndEventsFragment extends Fragment {
                 uiHandle.tapAHeart.floatHeart(count, false);
         }
 
-        if(event==null || !(event.eventId== StreamEvent.EventId.POLLS_CHANGED || event.eventId== StreamEvent.EventId.CHAT_MESSAGE || event.eventId == StreamEvent.EventId.DEDICATE))
+        if(!(event.eventId== StreamEvent.EventId.POLLS_CHANGED || event.eventId== StreamEvent.EventId.CHAT_MESSAGE || event.eventId == StreamEvent.EventId.DEDICATE))
                 return;
         feedAdapter.add(event);
         if(refresh) {
@@ -289,8 +284,7 @@ public class StreamAndEventsFragment extends Fragment {
 
     @Override
     public void onPause() {
-        getActivity().unregisterReceiver(eventsReceiver);
-        getActivity().unregisterReceiver(streamEventsreceiver);
+        getActivity().unregisterReceiver(getBroadcastReceiver());
 
         TeluguBeatsApp.onFFTData = new GenericListener2<>();
 

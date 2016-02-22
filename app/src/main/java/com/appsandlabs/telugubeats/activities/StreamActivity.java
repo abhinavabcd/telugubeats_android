@@ -45,6 +45,9 @@ public class StreamActivity extends AppBaseFragmentActivity {
             streamId = getIntent().getExtras().getString(Constants.STREAM_ID);
         }
 
+        if(StreamingService.isPlaying && StreamingService.stream!=null && StreamingService.stream.streamId.equalsIgnoreCase(streamId)){
+            loadTabsAndui(StreamingService.stream);
+        }//else wait for stream initialized event
         if (!app.getUserDeviceManager().isLoggedInUser(this)) {
             goToLoginActivity();
             return;
@@ -57,25 +60,30 @@ public class StreamActivity extends AppBaseFragmentActivity {
         if (intent.getExtras() == null) return;
         final Stream stream = StreamingService.stream;
         if(stream==null) return;
-        if (intent.getExtras().getBoolean(Constants.IS_STREAM_STARTED)) {
-            if (isFirstTimeStreamLoad) {
-                isFirstTimeStreamLoad = false;
-
-                setContentView(R.layout.activity_stream);
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        addTabs(stream);
-                    }
-                });
-
-            }
+        Bundle extras = intent.getExtras();
+        if (extras.getBoolean(Constants.IS_STREAM_STARTED) || StreamingService.isPlaying) {
+            loadTabsAndui(stream);
         }
-        if(intent.getExtras().getBoolean(Constants.IS_STREAM_BITMAPS_CHANGED)){
+        if(extras.getBoolean(Constants.IS_STREAM_BITMAPS_CHANGED)){
             if(stream.getBlurredImageBitmap()!=null){
                 //main activity //TODO: dirty fix
                 UiUtils.setBg(findViewById(android.R.id.content), new BitmapDrawable(stream.getBlurredImageBitmap()));
             }
+        }
+    }
+
+    private void loadTabsAndui(final Stream stream ) {
+        if (isFirstTimeStreamLoad) {
+            isFirstTimeStreamLoad = false;
+
+            setContentView(R.layout.activity_stream);
+            new Handler().post(new Runnable() {
+                @Override
+                public void run() {
+                    addTabs(stream);
+                }
+            });
+
         }
     }
 
@@ -100,10 +108,10 @@ public class StreamActivity extends AppBaseFragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        registerStreamChangesListener();
         app.getCurrentUser(new GenericListener<User>() {
             @Override
             public void onData(User s) {
-                registerStreamChangesListener();
                 startService(new Intent(StreamActivity.this, StreamingService.class).setAction(StreamingService.NOTIFY_PLAY).putExtra(Constants.STREAM_ID, streamId));
             }
         });
@@ -154,9 +162,10 @@ public class StreamActivity extends AppBaseFragmentActivity {
 
     @Override
     public void onBackPressed() {
+        super.onBackPressed();
         Intent i = new Intent(StreamActivity.this, MainActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | IntentCompat.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(i);
-        super.onBackPressed();
+        finish();
     }
 }

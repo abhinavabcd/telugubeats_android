@@ -24,6 +24,7 @@ import com.appsandlabs.telugubeats.models.Stream;
 import com.appsandlabs.telugubeats.services.RecordingService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -129,7 +130,12 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
             @Override
             public void onData(List<Stream> streams) {
                 swipeRefreshLayout.setRefreshing(false);
-                if(page==0) {
+                if (streams.size() == 0) {
+                    setEmptyText("You haven't created a stream. Click on this to create one.");
+                    return;
+                }
+
+                if (page == 0) {
                     RecordingStreamsFragment.this.streams.clear();
                 }
                 RecordingStreamsFragment.this.streams.addAll(streams);
@@ -177,7 +183,22 @@ public class RecordingStreamsFragment extends Fragment implements AbsListView.On
 
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(emptyText);
+            emptyView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    createNewRecordingStreams();
+                }
+            });
         }
+    }
+
+    private void createNewRecordingStreams() {
+        app.getUiUtils().createInput().add("Title","","text").add("Subtitle","", "text").ask(new GenericListener<HashMap<String, String>>(){
+            @Override
+            public void onData(HashMap<String, String> s) {
+                app.getServerCalls().createNewStream(s);
+            }
+        });
     }
 
     /**

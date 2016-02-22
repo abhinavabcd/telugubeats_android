@@ -253,7 +253,6 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     public void onDestroy() {
 		Log.e(Config.ERR_LOG_TAG, "destroy");      
 		isPlaying = false;
-        TeluguBeatsApp.sfd_ser = null;
         super.onDestroy();
     }
 
@@ -609,7 +608,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
     }
 
 
-    private synchronized void playStream(String streamId) {
+    private void playStream(String streamId) {
         app.getServerCalls().getStreamInfo(streamId, new GenericListener<Stream>() {
             @Override
             public void onData(Stream s) {
@@ -618,7 +617,7 @@ public class StreamingService extends Service implements AudioManager.OnAudioFoc
         });
     }
 
-    private synchronized  boolean playStream(Stream stream) {
+    private  boolean playStream(Stream stream) {
         if(stream==null){
             isPlaying = false;
             stopStream();

@@ -36,22 +36,22 @@ public class MainActivity extends AppBaseFragmentActivity implements OnFragmentI
         if (intent == null) return;
         Bundle extras = intent.getExtras();
         if (extras == null) return;
-        if (extras.getBoolean(Constants.IS_STREAM_STARTED)) {
-            streamStatusIcon.setImageResource(R.drawable.pause_button);
-            streamStatusIcon.setVisibility(View.VISIBLE);
-        }
-        else if (extras.getBoolean(Constants.IS_STREAM_STOPPED)) {
-            streamStatusIcon.setVisibility(View.GONE);
-        }
+        if(streamStatusIcon!=null) {
+            if (extras.getBoolean(Constants.IS_STREAM_STARTED)) {
+                streamStatusIcon.setImageResource(R.drawable.pause_button);
+                streamStatusIcon.setVisibility(View.VISIBLE);
+            } else if (extras.getBoolean(Constants.IS_STREAM_STOPPED)) {
+                streamStatusIcon.setVisibility(View.GONE);
+            }
 
-        if (extras.getBoolean(Constants.IS_RECORDING_STARTED)) {
-            streamStatusIcon.setImageResource(R.drawable.record_stop);
-            streamStatusIcon.setVisibility(View.VISIBLE);
+            if (extras.getBoolean(Constants.IS_RECORDING_STARTED)) {
+                streamStatusIcon.setImageResource(R.drawable.record_stop);
+                streamStatusIcon.setVisibility(View.VISIBLE);
+            }
+            if (extras.getBoolean(Constants.IS_RECORDING_STOPPED)) {
+                streamStatusIcon.setVisibility(View.GONE);
+            }
         }
-        if (extras.getBoolean(Constants.IS_RECORDING_STOPPED)) {
-            streamStatusIcon.setVisibility(View.GONE);
-        }
-
     }
 
     @Override

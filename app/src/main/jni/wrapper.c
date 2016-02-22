@@ -24,7 +24,7 @@ int read_samples(FILE *input_file, short *input) {
 }
 
 void Java_com_appsandlabs_telugubeats_services_RecordingService_initEncoder(JNIEnv *env,
-		jobject jobj, jint in_num_channels, jint in_samplerate, jint in_brate,
+		jobject jobj, jint in_num_channels, jint in_samplerate, jint out_samplerate, jint in_brate,
 		jint in_mode, jint in_quality) {
 	lame = lame_init();
 
@@ -34,6 +34,10 @@ void Java_com_appsandlabs_telugubeats_services_RecordingService_initEncoder(JNIE
 
 	lame_set_in_samplerate(lame, in_samplerate);
 	LOGD("Sample rate: %d", in_samplerate);
+
+	lame_set_out_samplerate(lame, out_samplerate);
+	LOGD("Sample out rate: %d", out_samplerate);
+
 
 	lame_set_brate(lame, in_brate);
 	LOGD("Bitrate: %d", in_brate);

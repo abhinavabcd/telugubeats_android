@@ -143,8 +143,6 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         if(action.equalsIgnoreCase(NOTIFY_DELETE) || action.equalsIgnoreCase(NOTIFY_PAUSE)){
             //if stream already exists , simpley push the data
             stopRecording();
-            stopForeground(true);
-            stopSelf();
         }
 
 
@@ -293,7 +291,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
     }
 
 
-    private native void initEncoder(int numChannels, int sampleRate, int bitRate, int mode, int quality);
+    private native void initEncoder(int numChannels, int sampleRate, int outSampleRate, int bitRate, int mode, int quality);
     private native void destroyEncoder();
     private native byte[] encodeToMp3Bytes(short[] samples , int size);
 
@@ -305,23 +303,35 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
             this.recordingService = service;
             if(recordingService.mRecorder==null)
                 recordingService.initRecorder();
+
+            boolean hasInitialized = false;
+
             for(int i=0;i<3;i++) {
                 try {
                     sleep(100);
                     if (recordingService.mRecorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
                         recordingService.mRecorder.startRecording(); // you can now get samples
                     }
+                    hasInitialized = true;
                     break;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch(Exception ex){
+                    ex.printStackTrace();
+                    if(i==2){
+                        isRecoding = false;
+                    }
                 }
+
             }
-            recordingService.sendStartEvent();
+            if(hasInitialized)
+                recordingService.sendStartEvent();
+            else{
+                Toast.makeText(recordingService, "Error occured initializing recorder", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @Override
         public void run() {
-                while (recordingService.isRecoding) {
+                while (isRecoding) {
                     int readSize = recordingService.mRecorder.read(recordingService.mBuffer, 0, recordingService.mBuffer.length);
                     if(readSize>0)
                         recordingService.readSamples.add(Arrays.copyOfRange(recordingService.mBuffer, 0, readSize));
@@ -332,6 +342,14 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                         e.printStackTrace();
                     }
                 }
+                recordingService.releaseRecorder();
+        }
+    }
+
+    private void releaseRecorder() {
+        if(mRecorder!=null) {
+            mRecorder.stop();
+            mRecorder.release();
         }
     }
 
@@ -346,7 +364,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
 
         public EncoderThread(RecordingService service) {
             this.musicService = service;
-            musicService.initEncoder(MP3_NUM_CHANNELS, MP3_SAMPLE_RATE, MP3_BITRATE, MP3_MODE, MP3_QUALITY); // initialize an mp3 encoder
+            musicService.initEncoder(MP3_NUM_CHANNELS, RECORDER_SAMPLE_RATE, MP3_SAMPLE_RATE, MP3_BITRATE, MP3_MODE, MP3_QUALITY); // initialize an mp3 encoder
             //init allspark
         }
 
@@ -366,11 +384,11 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
                     short[] samples = musicService.readSamples.pollFirst();
                     //call lame encoder and dump data into another list
 
-                    Log.d(TAG, "pending encoding buffer size ::  "+musicService.readSamples.size());
+//                    Log.d(TAG, "pending encoding buffer size ::  "+musicService.readSamples.size());
                     try {
                         byte[] mp3Bytes = musicService.encodeToMp3Bytes(samples, samples.length);
                         req.getOutputStream().write(mp3Bytes);
-                        if((numSamplesFlushed+=mp3Bytes.length) > 32*1024){
+                        if((numSamplesFlushed+=mp3Bytes.length) > 8*1024){
                             numSamplesFlushed = 0;
                             req.getOutputStream().flush();
                         }
@@ -389,7 +407,7 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
             }
             musicService.isRecoding = false;
             musicService.destroyEncoder();
-
+            req.gracefullyCloseConnection();
         }
     }
 
@@ -634,10 +652,6 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         isRecoding = false;
         sendBroadcast(new Intent().setAction(Constants.RECORDING_CHANGES_BROADCAST_ACTION).putExtra(Constants.IS_RECORDING_STOPPED, true));
 
-        if(mRecorder!=null) {
-            mRecorder.release();
-        }
-
         try {
             if(recordingThread !=null)
                 recordingThread.join();
@@ -650,6 +664,8 @@ public class RecordingService extends Service{//} implements AudioManager.OnAudi
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        stopForeground(true);
+        stopSelf();
         //stopped here
     }
 }

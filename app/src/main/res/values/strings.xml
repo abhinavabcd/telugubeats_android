@@ -9,4 +9,6 @@
     <string name="facebook_app_id">375538039158859</string>
     <string name="title_activity_all_streams">AllStreams</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="validation_error_title">Invalid Input</string>
+    <string name="required_field_error_msg">%s is a required field</string>
 </resources>

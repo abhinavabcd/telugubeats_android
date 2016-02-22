@@ -70,6 +70,7 @@ public class UiUtils {
 	private final App app;
 	private final Context context;
 
+
 	public enum Images {
 		MAP_MARKER_ICON("icons/marker.png"),
 		PLUS_ICON("icons/plus_icon.png"),
